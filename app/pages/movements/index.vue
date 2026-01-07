@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { StockMovement } from '~~/server/database/schema';
 
+const { t } = useI18n();
 const toast = useToast();
 
 // Fetch movements
@@ -82,20 +83,20 @@ const hasActiveFilters = computed(() => {
 });
 
 // Table columns
-const columns = [
-  { key: 'date', label: 'Date' },
-  { key: 'product', label: 'Product' },
-  { key: 'type', label: 'Type' },
-  { key: 'quantity', label: 'Qty', class: 'text-right' },
-  { key: 'stock', label: 'After', class: 'text-right' },
-  { key: 'reference', label: 'Reference' },
-];
+const columns = computed(() => [
+  { key: 'date', label: t('app.date') },
+  { key: 'product', label: t('movements.product') },
+  { key: 'type', label: t('movements.movement_type') },
+  { key: 'quantity', label: t('movements.quantity'), class: 'text-right' },
+  { key: 'stock', label: t('movements.stock_after'), class: 'text-right' },
+  { key: 'reference', label: t('movements.reference') },
+]);
 
-const movementTypes = [
+const movementTypes = computed(() => [
   {
     value: 'in',
-    label: 'In',
-    description: 'Receive',
+    label: t('movements.type_in'),
+    description: t('movements.type_in'),
     icon: 'lucide:arrow-down',
     color: 'text-green-600',
     bgColor: 'bg-green-50',
@@ -103,8 +104,8 @@ const movementTypes = [
   },
   {
     value: 'out',
-    label: 'Out',
-    description: 'Sales',
+    label: t('movements.type_out'),
+    description: t('movements.type_sale'),
     icon: 'lucide:arrow-up',
     color: 'text-red-600',
     bgColor: 'bg-red-50',
@@ -112,14 +113,14 @@ const movementTypes = [
   },
   {
     value: 'adjustment',
-    label: 'Adjust',
-    description: 'Correction',
+    label: t('movements.type_adjustment'),
+    description: t('movements.type_adjustment'),
     icon: 'lucide:settings-2',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
   },
-];
+]);
 
 function openCreateModal() {
   resetForm();
@@ -179,12 +180,12 @@ function formatDate(date: Date | string) {
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-semibold text-gray-900">Stock Movements</h1>
-        <p class="text-xs text-gray-500">Track inventory changes</p>
+        <h1 class="text-lg font-semibold text-gray-900">{{ t('movements.title') }}</h1>
+        <p class="text-xs text-gray-500">{{ t('movements.description') }}</p>
       </div>
       <button class="btn-primary" @click="openCreateModal">
         <Icon name="lucide:plus" class="h-3.5 w-3.5" />
-        New
+        {{ t('app.add') }}
       </button>
     </div>
 
@@ -198,7 +199,7 @@ function formatDate(date: Date | string) {
         "
       >
         <Icon name="lucide:arrow-down" class="h-3.5 w-3.5" />
-        Stock In
+        {{ t('stock.stock_in') }}
       </button>
       <button
         class="flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
@@ -208,7 +209,7 @@ function formatDate(date: Date | string) {
         "
       >
         <Icon name="lucide:arrow-up" class="h-3.5 w-3.5" />
-        Stock Out
+        {{ t('stock.stock_out') }}
       </button>
       <button
         class="flex items-center gap-1.5 rounded border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
@@ -218,7 +219,7 @@ function formatDate(date: Date | string) {
         "
       >
         <Icon name="lucide:settings-2" class="h-3.5 w-3.5" />
-        Adjust
+        {{ t('movements.type_adjustment') }}
       </button>
     </div>
 

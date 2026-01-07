@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const { data: stats, pending } = await useFetch('/api/dashboard/stats');
 const { data: chartData, pending: chartsPending } = await useFetch(
   '/api/dashboard/charts'
@@ -40,17 +41,17 @@ const ui = {
     <div class="flex items-end justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900">
-          Overview
+          {{ t('dashboard.title') }}
         </h1>
         <p class="mt-1 text-sm text-gray-500">
-          Business intelligence and inventory metrics.
+          {{ t('dashboard.welcome') }}
         </p>
       </div>
       <div
         class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-md shadow-sm"
       >
         <Icon name="lucide:calendar" class="h-4 w-4 text-gray-400" />
-        <span class="text-xs font-medium text-gray-700">Last 30 Days</span>
+        <span class="text-xs font-medium text-gray-700">{{ t('finance.last_30_days') }}</span>
       </div>
     </div>
 
@@ -60,7 +61,7 @@ const ui = {
       >
         <div class="flex justify-between items-start">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Total Products
+            {{ t('dashboard.total_products') }}
           </p>
           <Icon name="lucide:package" class="h-4 w-4 text-gray-400" />
         </div>
@@ -88,7 +89,7 @@ const ui = {
                 : 'text-gray-500'
             "
           >
-            Low Stock
+            {{ t('dashboard.low_stock_items') }}
           </p>
           <Icon
             name="lucide:alert-triangle"
@@ -113,7 +114,7 @@ const ui = {
           <span
             v-if="(stats?.lowStockCount ?? 0) > 0"
             class="text-xs font-medium text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded"
-            >Action needed</span
+            >{{ t('stock.low_stock_alert') }}</span
           >
         </div>
       </div>
@@ -123,7 +124,7 @@ const ui = {
       >
         <div class="flex justify-between items-start">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Active Suppliers
+            {{ t('dashboard.total_suppliers') }}
           </p>
           <Icon name="lucide:truck" class="h-4 w-4 text-gray-400" />
         </div>
@@ -139,7 +140,7 @@ const ui = {
       >
         <div class="flex justify-between items-start">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Total Valuation
+            {{ t('finance.revenue') }}
           </p>
           <Icon name="lucide:euro" class="h-4 w-4 text-gray-400" />
         </div>
@@ -156,16 +157,16 @@ const ui = {
         <div :class="ui.cardHeader">
           <div :class="ui.cardTitle">
             <Icon name="lucide:activity" class="h-3.5 w-3.5 text-gray-500" />
-            <span>Stock Velocity</span>
+            <span>{{ t('dashboard.stock_overview') }}</span>
           </div>
           <div class="flex items-center gap-3 text-xs">
             <div class="flex items-center gap-1.5">
               <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-              <span class="text-gray-600">In</span>
+              <span class="text-gray-600">{{ t('movements.type_in') }}</span>
             </div>
             <div class="flex items-center gap-1.5">
               <div class="w-2 h-2 rounded-full bg-red-500"></div>
-              <span class="text-gray-600">Out</span>
+              <span class="text-gray-600">{{ t('movements.type_out') }}</span>
             </div>
           </div>
         </div>
@@ -192,7 +193,7 @@ const ui = {
             class="h-64 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-lg"
           >
             <Icon name="lucide:bar-chart-2" class="h-8 w-8 mb-2 opacity-20" />
-            <span class="text-xs">No movement data yet</span>
+            <span class="text-xs">{{ t('finance.no_data') }}</span>
           </div>
         </div>
       </div>
@@ -201,7 +202,7 @@ const ui = {
         <div :class="ui.cardHeader">
           <div :class="ui.cardTitle">
             <Icon name="lucide:pie-chart" class="h-3.5 w-3.5 text-gray-500" />
-            <span>Category Split</span>
+            <span>{{ t('finance.sales_by_category') }}</span>
           </div>
         </div>
         <div :class="ui.cardBody">
@@ -219,7 +220,7 @@ const ui = {
             v-else
             class="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-lg"
           >
-            <span class="text-xs">No categories defined</span>
+            <span class="text-xs">{{ t('categories.no_categories') }}</span>
           </div>
         </div>
       </div>
@@ -233,12 +234,12 @@ const ui = {
               name="lucide:alert-circle"
               class="h-3.5 w-3.5 text-amber-600"
             />
-            <span>Low Stock Alerts</span>
+            <span>{{ t('dashboard.low_stock_items') }}</span>
           </div>
           <NuxtLink
             to="/products?filter=low-stock"
             class="text-xs font-medium text-gray-500 hover:text-gray-900 hover:underline"
-            >View All</NuxtLink
+            >{{ t('app.all') }}</NuxtLink
           >
         </div>
 
@@ -285,9 +286,9 @@ const ui = {
             >
               <Icon name="lucide:check" class="h-4 w-4 text-green-600" />
             </div>
-            <p class="text-sm font-medium text-gray-900">All stocked up</p>
+            <p class="text-sm font-medium text-gray-900">{{ t('stock.operation_success') }}</p>
             <p class="text-xs text-gray-500">
-              No products are below minimum levels.
+              {{ t('products.no_products_description') }}
             </p>
           </div>
         </div>
@@ -297,12 +298,12 @@ const ui = {
         <div :class="ui.cardHeader">
           <div :class="ui.cardTitle">
             <Icon name="lucide:history" class="h-3.5 w-3.5 text-gray-500" />
-            <span>Recent Activity</span>
+            <span>{{ t('dashboard.recent_movements') }}</span>
           </div>
           <NuxtLink
             to="/movements"
             class="text-xs font-medium text-gray-500 hover:text-gray-900 hover:underline"
-            >View All</NuxtLink
+            >{{ t('app.all') }}</NuxtLink
           >
         </div>
 
@@ -361,7 +362,7 @@ const ui = {
           </template>
 
           <div v-else class="p-8 text-center text-gray-500">
-            <p class="text-sm">No recent movements recorded.</p>
+            <p class="text-sm">{{ t('movements.no_movements') }}</p>
           </div>
         </div>
       </div>

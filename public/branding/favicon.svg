@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Mountain/Atlas shape -->
+  <path d="M32 8 L56 52 H8 L32 8Z" fill="url(#grad)" />
+  <!-- Inventory boxes -->
+  <rect x="24" y="32" width="8" height="8" rx="1" fill="white" opacity="0.9"/>
+  <rect x="32" y="32" width="8" height="8" rx="1" fill="white" opacity="0.7"/>
+  <rect x="28" y="24" width="8" height="8" rx="1" fill="white" opacity="0.8"/>
+</svg>

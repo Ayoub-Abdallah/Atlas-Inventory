@@ -7,14 +7,20 @@ interface ApiSettings {
   lowStockAlert: boolean | number | null;
   outOfStockAlert: boolean | number | null;
   emailDailyReport: boolean | number | null;
+  language: string | null;
+  theme: string | null;
+  invoiceTemplate: string | null;
   updatedAt: string | null;
 }
 
 // Frontend shape (nested for UI)
 export interface Settings {
   businessName: string;
-  currency: 'EUR' | 'USD' | 'GBP';
+  currency: 'DZD' | 'EUR' | 'USD' | 'GBP';
   defaultMargin: number;
+  language: 'fr' | 'en' | 'ar';
+  theme: 'default' | 'dark-grey' | 'professional-blue' | 'elegant-purple' | 'soft-green';
+  invoiceTemplate: string | null;
   stockAlerts: {
     lowStock: boolean;
     outOfStock: boolean;
@@ -25,9 +31,12 @@ export interface Settings {
 // Transform API response to frontend shape
 function transformFromApi(api: ApiSettings): Settings {
   return {
-    businessName: api.businessName ?? 'OpenStock Inc.',
-    currency: (api.currency as Settings['currency']) ?? 'EUR',
+    businessName: api.businessName ?? 'Atlas Inventory',
+    currency: (api.currency as Settings['currency']) ?? 'DZD',
     defaultMargin: api.defaultMargin ?? 30,
+    language: (api.language as Settings['language']) ?? 'fr',
+    theme: (api.theme as Settings['theme']) ?? 'default',
+    invoiceTemplate: api.invoiceTemplate ?? null,
     stockAlerts: {
       lowStock: Boolean(api.lowStockAlert),
       outOfStock: Boolean(api.outOfStockAlert),
@@ -42,6 +51,9 @@ function transformToApi(settings: Settings): Partial<ApiSettings> {
     businessName: settings.businessName,
     currency: settings.currency,
     defaultMargin: settings.defaultMargin,
+    language: settings.language,
+    theme: settings.theme,
+    invoiceTemplate: settings.invoiceTemplate,
     lowStockAlert: settings.stockAlerts.lowStock,
     outOfStockAlert: settings.stockAlerts.outOfStock,
     emailDailyReport: settings.stockAlerts.emailDaily,
@@ -62,6 +74,8 @@ export const useSettings = () => {
 
   const currencySymbol = computed(() => {
     switch (settings.value?.currency) {
+      case 'DZD':
+        return 'DA';
       case 'EUR':
         return '€';
       case 'USD':
@@ -69,12 +83,14 @@ export const useSettings = () => {
       case 'GBP':
         return '£';
       default:
-        return '€';
+        return 'DA';
     }
   });
 
   const currencyIcon = computed(() => {
     switch (settings.value?.currency) {
+      case 'DZD':
+        return 'lucide:banknote';
       case 'EUR':
         return 'lucide:euro';
       case 'USD':
@@ -82,7 +98,7 @@ export const useSettings = () => {
       case 'GBP':
         return 'lucide:pound-sterling';
       default:
-        return 'lucide:euro';
+        return 'lucide:banknote';
     }
   });
 

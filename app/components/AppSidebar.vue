@@ -1,25 +1,29 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { user, isAdmin, logout } = useAuth();
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: 'lucide:layout-dashboard' },
-  { name: 'Products', href: '/products', icon: 'lucide:package' },
-  { name: 'Categories', href: '/categories', icon: 'lucide:folder-tree' },
-  { name: 'Suppliers', href: '/suppliers', icon: 'lucide:truck' },
-  { name: 'Movements', href: '/movements', icon: 'lucide:arrow-left-right' },
-];
+const navigation = computed(() => [
+  { name: t('nav.dashboard'), href: '/', icon: 'lucide:layout-dashboard' },
+  { name: t('nav.scan'), href: '/stock/scan', icon: 'lucide:scan-barcode' },
+  { name: t('nav.products'), href: '/products', icon: 'lucide:package' },
+  { name: t('nav.categories'), href: '/categories', icon: 'lucide:folder-tree' },
+  { name: t('nav.suppliers'), href: '/suppliers', icon: 'lucide:truck' },
+  { name: t('nav.movements'), href: '/movements', icon: 'lucide:arrow-left-right' },
+  { name: t('nav.sales'), href: '/sales', icon: 'lucide:receipt' },
+  { name: t('nav.finance'), href: '/finance', icon: 'lucide:chart-line' },
+]);
 
 const secondaryNavigation = computed(() => {
   const items = [
-    { name: 'Taxes', href: '/taxes', icon: 'lucide:percent' },
-    { name: 'Settings', href: '/settings', icon: 'lucide:settings' },
+    { name: t('nav.taxes'), href: '/taxes', icon: 'lucide:percent' },
+    { name: t('nav.settings'), href: '/settings', icon: 'lucide:settings' },
   ];
 
   // Add Users link for admins only
   if (isAdmin.value) {
-    items.unshift({ name: 'Users', href: '/users', icon: 'lucide:users' });
+    items.unshift({ name: t('nav.users'), href: '/users', icon: 'lucide:users' });
   }
 
   return items;
@@ -39,23 +43,27 @@ async function handleLogout() {
 </script>
 
 <template>
-  <aside class="flex w-64 flex-col border-r border-gray-200 bg-white">
+  <aside class="flex w-64 flex-col border-gray-200 bg-white ltr:border-r rtl:border-l">
     <!-- Header -->
     <div class="flex h-16 items-center gap-3 border-b border-gray-100 px-6">
       <div
-        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white shadow-sm"
+        class="flex h-10 w-28 shrink-0 items-center justify-center"
       >
-        <Icon name="lucide:boxes" class="h-5 w-5" />
+        <!-- <Icon name="lucide:boxes" class="h-5 w-5" /> -->
+        <img src="/branding/logo.png" class="w-22" />
+
       </div>
-      <div class="flex flex-col">
+      <!-- 
+     <div class="flex flex-col">
         <span class="text-sm font-bold tracking-tight text-gray-900"
-          >OpenStock</span
+          >Atlas</span
         >
         <span
-          class="text-[10px] font-medium text-gray-500 uppercase tracking-wider"
+          class="text-[10px] font-medium text-gray-51000 uppercase tracking-wider"
           >Inventory</span
-        >
+        > 
       </div>
+      -->
     </div>
 
     <!-- Navigation -->
@@ -85,7 +93,7 @@ async function handleLogout() {
           <span>{{ item.name }}</span>
           <div
             v-if="isActive(item.href)"
-            class="ml-auto h-1.5 w-1.5 rounded-full bg-primary-600"
+            class="ltr:ml-auto rtl:mr-auto h-1.5 w-1.5 rounded-full bg-primary-600"
           />
         </NuxtLink>
       </div>
@@ -98,7 +106,7 @@ async function handleLogout() {
         <p
           class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
         >
-          System
+          {{ t('nav.system') }}
         </p>
         <NuxtLink
           v-for="item in secondaryNavigation"

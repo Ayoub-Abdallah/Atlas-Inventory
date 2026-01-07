@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Category } from '~~/server/database/schema';
 
+const { t } = useI18n();
 const toast = useToast();
 
 // Fetch categories
@@ -38,17 +39,17 @@ const presetColors = [
 ];
 
 // Table columns
-const columns = [
-  { key: 'name', label: 'Category' },
-  { key: 'parent', label: 'Parent' },
+const columns = computed(() => [
+  { key: 'name', label: t('categories.category_name') },
+  { key: 'parent', label: t('categories.parent_category') },
   {
     key: 'products',
-    label: 'Products',
+    label: t('products.title'),
     class: 'text-right',
     headerClass: 'text-right',
   },
   { key: 'actions', label: '', class: 'w-24' },
-];
+]);
 
 function openCreateModal() {
   editingCategory.value = null;
@@ -139,12 +140,12 @@ const topLevelCategories = computed(
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-semibold text-gray-900">Categories</h1>
-        <p class="text-xs text-gray-500">Organize products by category</p>
+        <h1 class="text-lg font-semibold text-gray-900">{{ t('categories.title') }}</h1>
+        <p class="text-xs text-gray-500">{{ t('categories.description') }}</p>
       </div>
       <button class="btn-primary" @click="openCreateModal">
         <Icon name="lucide:plus" class="h-3.5 w-3.5" />
-        Add
+        {{ t('app.add') }}
       </button>
     </div>
 
@@ -176,8 +177,8 @@ const topLevelCategories = computed(
         :columns="columns"
         :data="categories || []"
         :loading="pending"
-        empty-title="No categories"
-        empty-description="Create categories to organize products."
+        :empty-title="t('categories.no_categories')"
+        :empty-description="t('categories.no_categories_description')"
         empty-icon="lucide:folder-plus"
         hoverable
       >

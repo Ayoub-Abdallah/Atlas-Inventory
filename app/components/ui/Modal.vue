@@ -2,7 +2,8 @@
 import { computed, watch, onUnmounted } from 'vue';
 
 interface Props {
-  open: boolean;
+  open?: boolean;
+  show?: boolean;
   title: string;
   description?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -10,11 +11,18 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'md',
+  open: undefined,
+  show: undefined,
 });
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
+  'update:show': [value: boolean];
+  'close': [];
 }>();
+
+// Support both 'open' and 'show' props
+const isOpen = computed(() => props.open ?? props.show ?? false);
 
 const sizeClasses = computed(() => {
   const sizes = {
@@ -29,6 +37,8 @@ const sizeClasses = computed(() => {
 
 function close() {
   emit('update:open', false);
+  emit('update:show', false);
+  emit('close');
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -38,9 +48,9 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 watch(
-  () => props.open,
-  (isOpen) => {
-    if (isOpen) {
+  isOpen,
+  (isOpenValue) => {
+    if (isOpenValue) {
       document.addEventListener('keydown', handleKeydown);
       document.body.style.overflow = 'hidden';
     } else {
@@ -67,7 +77,7 @@ onUnmounted(() => {
       leave-to-class="opacity-0"
     >
       <div
-        v-if="open"
+        v-if="isOpen"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
         role="dialog"
         aria-modal="true"
@@ -86,7 +96,7 @@ onUnmounted(() => {
           leave-to-class="scale-95 opacity-0 translate-y-4 sm:translate-y-0"
         >
           <div
-            v-if="open"
+            v-if="isOpen"
             class="relative z-10 w-full overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-black/5 flex flex-col max-h-[90vh]"
             :class="sizeClasses"
           >

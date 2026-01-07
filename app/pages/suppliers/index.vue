@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Supplier } from '~~/server/database/schema';
 
+const { t } = useI18n();
 const toast = useToast();
 
 const { data: suppliers, pending, refresh } = await useFetch('/api/suppliers');
@@ -20,13 +21,13 @@ const form = reactive({
   notes: '',
 });
 
-const columns = [
-  { key: 'name', label: 'Supplier' },
-  { key: 'contact', label: 'Contact' },
-  { key: 'location', label: 'Location' },
-  { key: 'status', label: 'Status' },
+const columns = computed(() => [
+  { key: 'name', label: t('suppliers.supplier_name') },
+  { key: 'contact', label: t('suppliers.email') },
+  { key: 'location', label: t('suppliers.city') },
+  { key: 'status', label: t('app.status') },
   { key: 'actions', label: '', class: 'w-24' },
-];
+]);
 
 function openCreateModal() {
   editingSupplier.value = null;
@@ -116,12 +117,12 @@ const activeSuppliers = computed(
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-semibold text-gray-900">Suppliers</h1>
-        <p class="text-xs text-gray-500">Manage product suppliers</p>
+        <h1 class="text-lg font-semibold text-gray-900">{{ t('suppliers.title') }}</h1>
+        <p class="text-xs text-gray-500">{{ t('suppliers.description') }}</p>
       </div>
       <button class="btn-primary" @click="openCreateModal">
         <Icon name="lucide:plus" class="h-3.5 w-3.5" />
-        Add
+        {{ t('app.add') }}
       </button>
     </div>
 
@@ -153,8 +154,8 @@ const activeSuppliers = computed(
         :columns="columns"
         :data="suppliers || []"
         :loading="pending"
-        empty-title="No suppliers"
-        empty-description="Add suppliers to track sources."
+        :empty-title="t('suppliers.no_suppliers')"
+        :empty-description="t('suppliers.no_suppliers_description')"
         empty-icon="lucide:truck"
         hoverable
       >

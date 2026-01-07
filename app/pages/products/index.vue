@@ -7,6 +7,7 @@ import type {
   ProductVariant as DBProductVariant,
 } from '~~/server/database/schema';
 
+const { t } = useI18n();
 const toast = useToast();
 const router = useRouter();
 const { currencySymbol, currencyIcon } = useSettings();
@@ -460,15 +461,15 @@ function getSupplierName(supplierId: string | null | undefined) {
     <div class="flex items-end justify-between border-b border-gray-200 pb-4">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900">
-          Products
+          {{ t('products.title') }}
         </h1>
         <p class="mt-1 text-sm text-gray-500">
-          Manage your inventory catalog and pricing strategies.
+          {{ t('products.description') }}
         </p>
       </div>
       <UiButton @click="openCreateModal">
         <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-        New Product
+        {{ t('products.add_product') }}
       </UiButton>
     </div>
 
@@ -486,32 +487,32 @@ function getSupplierName(supplierId: string | null | undefined) {
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500"
               >
-                Product
+                {{ t('products.product_name') }}
               </th>
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500"
               >
-                SKU
+                {{ t('products.sku') }}
               </th>
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500"
               >
-                Category
+                {{ t('products.category') }}
               </th>
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 text-right"
               >
-                Stock
+                {{ t('products.stock') }}
               </th>
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 text-right"
               >
-                Cost
+                {{ t('products.cost_price') }}
               </th>
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 text-right"
               >
-                Price
+                {{ t('products.selling_price') }}
               </th>
               <th
                 class="h-9 px-4 text-xs font-semibold uppercase tracking-wide text-gray-500 w-20"
@@ -529,7 +530,7 @@ function getSupplierName(supplierId: string | null | undefined) {
                     class="h-5 w-5 animate-spin text-gray-900"
                   />
                   <span class="text-xs font-medium text-gray-500 animate-pulse"
-                    >Loading data...</span
+                    >{{ t('app.loading') }}</span
                   >
                 </div>
               </td>
@@ -548,10 +549,10 @@ function getSupplierName(supplierId: string | null | undefined) {
                     />
                   </div>
                   <h3 class="text-sm font-medium text-gray-900">
-                    Inventory empty
+                    {{ t('products.no_products') }}
                   </h3>
                   <p class="mt-1 text-xs text-gray-500">
-                    Get started by adding your first product.
+                    {{ t('products.no_products_description') }}
                   </p>
                 </div>
               </td>

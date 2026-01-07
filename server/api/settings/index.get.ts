@@ -14,12 +14,15 @@ export default defineEventHandler(async (event) => {
   // If not found, create default
   const [newSettings] = await db.insert(settings).values({
     id: 1,
-    businessName: 'OpenStock Inc.',
-    currency: 'EUR',
+    businessName: 'Atlas Inventory',
+    currency: 'DZD',
     defaultMargin: 30,
     lowStockAlert: true,
     outOfStockAlert: true,
     emailDailyReport: false,
+    language: 'fr',
+    theme: 'default',
+    invoiceTemplate: null,
   }).returning();
 
   return newSettings;

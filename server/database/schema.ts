@@ -84,6 +84,7 @@ export const suppliers = sqliteTable('suppliers', {
 export const suppliersRelations = relations(suppliers, ({ many }) => ({
   products: many(products),
   supplierPrices: many(supplierPrices),
+  sales: many(sales),
 }));
 
 // ============================================================================
@@ -334,7 +335,7 @@ export const stockMovements = sqliteTable('stock_movements', {
   variantId: text('variant_id').references(() => productVariants.id),
 
   type: text('type', {
-    enum: ['in', 'out', 'adjustment', 'transfer', 'return'],
+    enum: ['in', 'out', 'adjustment', 'transfer', 'return', 'sale'],
   }).notNull(),
 
   quantity: integer('quantity').notNull(),
@@ -349,6 +350,8 @@ export const stockMovements = sqliteTable('stock_movements', {
   reason: text('reason'),
 
   supplierId: text('supplier_id').references(() => suppliers.id),
+
+  saleId: text('sale_id'),
 
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
     () => new Date()
@@ -367,6 +370,88 @@ export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
   supplier: one(suppliers, {
     fields: [stockMovements.supplierId],
     references: [suppliers.id],
+  }),
+  sale: one(sales, {
+    fields: [stockMovements.saleId],
+    references: [sales.id],
+  }),
+}));
+
+// ============================================================================
+// SALES
+// ============================================================================
+export const sales = sqliteTable('sales', {
+  id: text('id').primaryKey(),
+  invoiceNumber: text('invoice_number'),
+  supplierId: text('supplier_id').references(() => suppliers.id),
+  userId: text('user_id').references(() => users.id),
+  status: text('status', { enum: ['draft', 'confirmed', 'cancelled'] })
+    .notNull()
+    .default('draft'),
+  totalAmount: real('total_amount').notNull().default(0),
+  totalCost: real('total_cost').default(0),
+  taxAmount: real('tax_amount').default(0),
+  // Client info
+  clientName: text('client_name'),
+  clientInfo: text('client_info'),
+  notes: text('notes'),
+  metadata: text('metadata', { mode: 'json' }),
+  confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const salesRelations = relations(sales, ({ one, many }) => ({
+  supplier: one(suppliers, {
+    fields: [sales.supplierId],
+    references: [suppliers.id],
+  }),
+  user: one(users, {
+    fields: [sales.userId],
+    references: [users.id],
+  }),
+  items: many(saleItems),
+  movements: many(stockMovements),
+}));
+
+// ============================================================================
+// SALE ITEMS
+// ============================================================================
+export const saleItems = sqliteTable('sale_items', {
+  id: text('id').primaryKey(),
+  saleId: text('sale_id')
+    .notNull()
+    .references(() => sales.id, { onDelete: 'cascade' }),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id),
+  variantId: text('variant_id').references(() => productVariants.id),
+  quantity: integer('quantity').notNull(),
+  unitPrice: real('unit_price').notNull(),
+  unitCost: real('unit_cost').default(0),
+  taxRate: real('tax_rate').default(0),
+  lineTotal: real('line_total').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const saleItemsRelations = relations(saleItems, ({ one }) => ({
+  sale: one(sales, {
+    fields: [saleItems.saleId],
+    references: [sales.id],
+  }),
+  product: one(products, {
+    fields: [saleItems.productId],
+    references: [products.id],
+  }),
+  variant: one(productVariants, {
+    fields: [saleItems.variantId],
+    references: [productVariants.id],
   }),
 }));
 
@@ -405,6 +490,12 @@ export type NewVariantSupplierExclusion =
 export type SellingPriceHistory = typeof sellingPriceHistory.$inferSelect;
 export type NewSellingPriceHistory = typeof sellingPriceHistory.$inferInsert;
 
+export type Sale = typeof sales.$inferSelect;
+export type NewSale = typeof sales.$inferInsert;
+
+export type SaleItem = typeof saleItems.$inferSelect;
+export type NewSaleItem = typeof saleItems.$inferInsert;
+
 // ============================================================================
 // USERS
 // Roles:
@@ -437,8 +528,10 @@ export type NewUser = typeof users.$inferInsert;
 // ============================================================================
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
-  businessName: text('business_name').default('OpenStock Inc.'),
+  businessName: text('business_name').default('Atlas Inventory'),
   currency: text('currency').default('EUR'),
+  language: text('language').default('fr'),
+  theme: text('theme').default('default'),
   defaultMargin: real('default_margin').default(30),
   lowStockAlert: integer('low_stock_alert', { mode: 'boolean' }).default(true),
   outOfStockAlert: integer('out_of_stock_alert', { mode: 'boolean' }).default(
@@ -447,6 +540,9 @@ export const settings = sqliteTable('settings', {
   emailDailyReport: integer('email_daily_report', { mode: 'boolean' }).default(
     false
   ),
+  invoiceTemplate: text('invoice_template'), // base64 encoded DOCX or null
+  invoicePrefix: text('invoice_prefix').default('INV-'),
+  invoiceNextNumber: integer('invoice_next_number').default(1),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
     () => new Date()
   ),

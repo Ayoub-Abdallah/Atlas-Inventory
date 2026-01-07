@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t, locale, setLocale } = useI18n();
 const loading = ref(false);
 const seedLoading = ref(false);
 const clearLoading = ref(false);
@@ -8,8 +9,11 @@ const isDev = import.meta.dev;
 
 const settings = ref<{
   businessName: string;
-  currency: 'EUR' | 'USD' | 'GBP';
+  currency: 'DZD' | 'EUR' | 'USD' | 'GBP';
   defaultMargin: number;
+  language: 'fr' | 'en' | 'ar';
+  theme: 'default' | 'dark-grey' | 'professional-blue' | 'elegant-purple' | 'soft-green';
+  invoiceTemplate: string | null;
   stockAlerts: {
     lowStock: boolean;
     outOfStock: boolean;
@@ -27,7 +31,37 @@ watch(
   { immediate: true }
 );
 
+// Sync language setting with i18n locale
+watch(() => settings.value?.language, (newLang) => {
+  if (newLang && newLang !== locale.value) {
+    setLocale(newLang);
+  }
+});
+
 const toast = useToast();
+
+// Theme definitions
+const themes = [
+  { id: 'default', name: 'settings.themeDefault', color: '#374151' },
+  { id: 'dark-grey', name: 'settings.themeDarkGrey', color: '#1f2937' },
+  { id: 'professional-blue', name: 'settings.themeProfessionalBlue', color: '#1e40af' },
+  { id: 'elegant-purple', name: 'settings.themeElegantPurple', color: '#6b21a8' },
+  { id: 'soft-green', name: 'settings.themeSoftGreen', color: '#166534' },
+];
+
+// Apply theme to document
+function applyTheme(themeId: string) {
+  if (import.meta.client) {
+    document.documentElement.setAttribute('data-theme', themeId);
+  }
+}
+
+// Watch for theme changes
+watch(() => settings.value?.theme, (newTheme) => {
+  if (newTheme) {
+    applyTheme(newTheme);
+  }
+}, { immediate: true });
 
 async function seedDatabase() {
   if (!isDev) return;
@@ -36,11 +70,11 @@ async function seedDatabase() {
   try {
     const result = await $fetch('/api/__seed', { method: 'POST' });
     toast.success(
-      'Database seeded',
-      `Created ${result.counts.products} products, ${result.counts.categories} categories, ${result.counts.suppliers} suppliers`
+      t('settings.databaseSeeded'),
+      t('settings.seedSuccess', { products: result.counts.products, categories: result.counts.categories, suppliers: result.counts.suppliers })
     );
   } catch (error: any) {
-    toast.error('Seed failed', error.message || 'Failed to seed database');
+    toast.error(t('settings.seedFailed'), error.message || t('errors.generic'));
   } finally {
     seedLoading.value = false;
   }
@@ -53,11 +87,11 @@ async function clearDatabase() {
   try {
     await $fetch('/api/__clear', { method: 'POST' });
     toast.success(
-      'Database cleared',
-      'All data has been removed (settings preserved).'
+      t('settings.databaseCleared'),
+      t('settings.clearSuccess')
     );
   } catch (error: any) {
-    toast.error('Clear failed', error.message || 'Failed to clear database');
+    toast.error(t('settings.clearFailed'), error.message || t('errors.generic'));
   } finally {
     clearLoading.value = false;
   }
@@ -71,9 +105,9 @@ async function saveSettings() {
   loading.value = false;
 
   if (success) {
-    toast.success('Configuration saved', 'Your settings have been updated.');
+    toast.success(t('settings.configSaved'), t('settings.configSavedDesc'));
   } else {
-    toast.error('Error', 'Failed to save settings.');
+    toast.error(t('errors.generic'), t('settings.saveFailed'));
   }
 }
 
@@ -105,10 +139,10 @@ const ui = {
     <div class="flex items-end justify-between border-b border-gray-200 pb-4">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900">
-          Settings
+          {{ t('settings.title') }}
         </h1>
         <p class="mt-1 text-sm text-gray-500">
-          Manage your workspace preferences and defaults.
+          {{ t('settings.subtitle') }}
         </p>
       </div>
       <button
@@ -122,40 +156,42 @@ const ui = {
           class="h-4 w-4 animate-spin"
         />
         <Icon v-else name="lucide:save" class="h-4 w-4" />
-        Save Changes
+        {{ t('settings.saveChanges') }}
       </button>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-12">
       <div v-if="settings" class="lg:col-span-8 space-y-6">
+        <!-- General Configuration -->
         <div :class="ui.card">
           <div :class="ui.cardHeader">
-            <h2 :class="ui.cardTitle">General Configuration</h2>
+            <h2 :class="ui.cardTitle">{{ t('settings.generalConfig') }}</h2>
             <Icon name="lucide:settings-2" class="h-4 w-4 text-gray-400" />
           </div>
           <div :class="ui.cardBody">
             <div class="grid gap-5 sm:grid-cols-2">
               <div class="sm:col-span-2">
-                <label :class="ui.label">Workspace Name</label>
+                <label :class="ui.label">{{ t('settings.workspaceName') }}</label>
                 <input
                   v-model="settings.businessName"
                   type="text"
                   :class="ui.input"
-                  placeholder="Ex: My Awesome Shop"
+                  :placeholder="t('settings.workspaceNamePlaceholder')"
                 />
               </div>
 
               <div>
-                <label :class="ui.label">Currency</label>
+                <label :class="ui.label">{{ t('settings.currency') }}</label>
                 <select v-model="settings.currency" :class="ui.inputSelect">
-                  <option value="EUR">Euro (€)</option>
-                  <option value="USD">US Dollar ($)</option>
-                  <option value="GBP">British Pound (£)</option>
+                  <option value="DZD">{{ t('settings.currencyDZD') }}</option>
+                  <option value="EUR">{{ t('settings.currencyEUR') }}</option>
+                  <option value="USD">{{ t('settings.currencyUSD') }}</option>
+                  <option value="GBP">{{ t('settings.currencyGBP') }}</option>
                 </select>
               </div>
 
               <div>
-                <label :class="ui.label">Default Margin</label>
+                <label :class="ui.label">{{ t('settings.defaultMargin') }}</label>
                 <div class="relative rounded-md shadow-sm">
                   <input
                     v-model="settings.defaultMargin"
@@ -173,6 +209,57 @@ const ui = {
           </div>
         </div>
 
+        <!-- Language & Appearance -->
+        <div :class="ui.card">
+          <div :class="ui.cardHeader">
+            <h2 :class="ui.cardTitle">{{ t('settings.languageAppearance') }}</h2>
+            <Icon name="lucide:palette" class="h-4 w-4 text-gray-400" />
+          </div>
+          <div :class="ui.cardBody">
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label :class="ui.label">{{ t('settings.language') }}</label>
+                <select v-model="settings.language" :class="ui.inputSelect">
+                  <option value="fr">{{ t('settings.languageFR') }}</option>
+                  <option value="en">{{ t('settings.languageEN') }}</option>
+                  <option value="ar">{{ t('settings.languageAR') }}</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label :class="ui.label">{{ t('settings.theme') }}</label>
+                <div class="grid grid-cols-5 gap-3 mt-2">
+                  <button
+                    v-for="theme in themes"
+                    :key="theme.id"
+                    @click="settings.theme = theme.id as any"
+                    :class="[
+                      'relative flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all',
+                      settings.theme === theme.id
+                        ? 'border-gray-900 bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    ]"
+                  >
+                    <div
+                      class="w-8 h-8 rounded-full mb-2 shadow-sm"
+                      :style="{ backgroundColor: theme.color }"
+                    />
+                    <span class="text-xs font-medium text-gray-700 text-center">
+                      {{ t(theme.name) }}
+                    </span>
+                    <Icon
+                      v-if="settings.theme === theme.id"
+                      name="lucide:check"
+                      class="absolute top-1 right-1 h-4 w-4 text-gray-900"
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
         <div class="grid gap-4 sm:grid-cols-3">
           <NuxtLink
             to="/taxes"
@@ -193,9 +280,9 @@ const ui = {
               />
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">Tax Rules</h3>
+              <h3 class="font-semibold text-gray-900">{{ t('nav.taxes') }}</h3>
               <p class="text-xs text-gray-500 mt-1">
-                Manage VAT & regional taxes.
+                {{ t('settings.manageTaxes') }}
               </p>
             </div>
           </NuxtLink>
@@ -219,8 +306,8 @@ const ui = {
               />
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">Categories</h3>
-              <p class="text-xs text-gray-500 mt-1">Organize your inventory.</p>
+              <h3 class="font-semibold text-gray-900">{{ t('nav.categories') }}</h3>
+              <p class="text-xs text-gray-500 mt-1">{{ t('settings.organizeInventory') }}</p>
             </div>
           </NuxtLink>
 
@@ -243,8 +330,8 @@ const ui = {
               />
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">Suppliers</h3>
-              <p class="text-xs text-gray-500 mt-1">Manage vendor directory.</p>
+              <h3 class="font-semibold text-gray-900">{{ t('nav.suppliers') }}</h3>
+              <p class="text-xs text-gray-500 mt-1">{{ t('settings.manageVendors') }}</p>
             </div>
           </NuxtLink>
         </div>
@@ -253,16 +340,16 @@ const ui = {
       <div class="lg:col-span-4 space-y-6">
         <div v-if="settings" :class="ui.card">
           <div :class="ui.cardHeader">
-            <h2 :class="ui.cardTitle">Notifications</h2>
+            <h2 :class="ui.cardTitle">{{ t('settings.notifications') }}</h2>
             <Icon name="lucide:bell" class="h-4 w-4 text-gray-400" />
           </div>
 
           <div class="divide-y divide-gray-100">
             <div class="flex items-center justify-between p-4">
               <div class="flex-1 pr-4">
-                <p class="text-sm font-medium text-gray-900">Low Stock Alert</p>
+                <p class="text-sm font-medium text-gray-900">{{ t('settings.lowStockAlert') }}</p>
                 <p class="text-xs text-gray-500 mt-0.5">
-                  Notify when items reach min level.
+                  {{ t('settings.lowStockAlertDesc') }}
                 </p>
               </div>
               <button
@@ -294,9 +381,9 @@ const ui = {
 
             <div class="flex items-center justify-between p-4">
               <div class="flex-1 pr-4">
-                <p class="text-sm font-medium text-gray-900">Out of Stock</p>
+                <p class="text-sm font-medium text-gray-900">{{ t('settings.outOfStock') }}</p>
                 <p class="text-xs text-gray-500 mt-0.5">
-                  Critical alert when stock is 0.
+                  {{ t('settings.outOfStockDesc') }}
                 </p>
               </div>
               <button
@@ -330,8 +417,8 @@ const ui = {
 
           <div class="bg-gray-50 px-4 py-3 border-t border-gray-100">
             <p class="text-xs text-gray-500 text-center">
-              Alerts are sent to
-              <span class="font-medium text-gray-900">admin@openstock.io</span>
+              {{ t('settings.alertsSentTo') }}
+              <span class="font-medium text-gray-900">admin@atlas-inventory.app</span>
             </p>
           </div>
         </div>
@@ -343,7 +430,7 @@ const ui = {
         >
           <div :class="ui.cardHeader" class="bg-amber-50 border-amber-100">
             <h2 :class="ui.cardTitle" class="text-amber-700">
-              Developer Tools
+              {{ t('settings.developerTools') }}
             </h2>
             <Icon name="lucide:code-2" class="h-4 w-4 text-amber-500" />
           </div>
@@ -357,10 +444,9 @@ const ui = {
                 </div>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900">Seed Database</p>
+                <p class="text-sm font-medium text-gray-900">{{ t('settings.seedDatabase') }}</p>
                 <p class="text-xs text-gray-500 mt-0.5">
-                  Populate the database with sample data. This will clear all
-                  existing data.
+                  {{ t('settings.seedDatabaseDesc') }}
                 </p>
               </div>
             </div>
@@ -375,7 +461,7 @@ const ui = {
                 class="h-4 w-4 animate-spin"
               />
               <Icon v-else name="lucide:sparkles" class="h-4 w-4" />
-              {{ seedLoading ? 'Seeding...' : 'Seed Sample Data' }}
+              {{ seedLoading ? t('settings.seeding') : t('settings.seedSampleData') }}
             </button>
 
             <div class="border-t border-amber-200 pt-4 mt-4">
@@ -389,10 +475,10 @@ const ui = {
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-900">
-                    Clear Database
+                    {{ t('settings.clearDatabase') }}
                   </p>
                   <p class="text-xs text-gray-500 mt-0.5">
-                    Remove all data except settings.
+                    {{ t('settings.clearDatabaseDesc') }}
                   </p>
                 </div>
               </div>
@@ -407,7 +493,7 @@ const ui = {
                   class="h-4 w-4 animate-spin"
                 />
                 <Icon v-else name="lucide:trash-2" class="h-4 w-4" />
-                {{ clearLoading ? 'Clearing...' : 'Clear All Data' }}
+                {{ clearLoading ? t('settings.clearing') : t('settings.clearAllData') }}
               </button>
             </div>
 
@@ -416,7 +502,7 @@ const ui = {
                 name="lucide:alert-triangle"
                 class="h-3 w-3 inline-block mr-1"
               />
-              These actions cannot be undone
+              {{ t('settings.actionsCannotBeUndone') }}
             </p>
           </div>
         </div>
