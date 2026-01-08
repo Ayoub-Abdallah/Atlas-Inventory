@@ -14,6 +14,7 @@
     "db:push": "for f in .data/hub/d1/export/*.sql; do echo \"Executing $f...\"; wrangler d1 execute zento_db --remote --file=\"$f\"; done",
     "db:export": "npx tsx scripts/export-db.ts",
     "db:sync": "npm run db:export && npm run db:push",
+    "deploy": "nuxi build --preset=cloudflare-pages && wrangler pages deploy dist",
     "deploy:cf": "nuxi build --preset=cloudflare-pages && wrangler pages deploy dist"
   },
   "dependencies": {

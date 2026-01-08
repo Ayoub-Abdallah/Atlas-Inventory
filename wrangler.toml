@@ -1,0 +1,20 @@
+# Cloudflare Pages Configuration for NuxtHub
+# This app uses NuxtHub and should be deployed via Pages, not Workers
+
+name = "atlas-inventory"
+compatibility_date = "2025-07-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Build output directory for Pages
+pages_build_output_dir = "dist"
+
+# D1 Database for application data
+[[d1_databases]]
+binding = "DB"
+database_name = "atlas-inventory-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE"  # Replace after creating: npx wrangler d1 create atlas-inventory-db
+
+# KV for caching and sessions
+[[kv_namespaces]]
+binding = "KV"
+id = "YOUR_KV_NAMESPACE_ID_HERE"  # Replace after creating: npx wrangler kv:namespace create atlas_inventory_kv

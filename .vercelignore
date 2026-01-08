@@ -1,0 +1,3 @@
+# This project is designed for Cloudflare Pages deployment
+# Use: npm run deploy:cf
+*
