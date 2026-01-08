@@ -69,9 +69,10 @@ async function handleSubmit() {
           <div
             class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary-50 mb-4"
           >
-            <Icon name="lucide:package" class="w-6 h-6 text-primary-600" />
+            <!-- <Icon name="lucide:package" class="w-6 h-6 text-primary-600" /> -->
+                <img src="/branding/Atlas inventory Logo.png" />
           </div>
-          <h1 class="text-2xl font-bold text-gray-900">Welcome to OpenStock</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Welcome to Atlas Inventory</h1>
           <p class="text-sm text-gray-500 mt-2">
             Create your administrator account to get started
           </p>
