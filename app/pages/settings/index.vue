@@ -31,37 +31,29 @@ watch(
   { immediate: true }
 );
 
-// Sync language setting with i18n locale
-watch(() => settings.value?.language, (newLang) => {
+// Sync language setting with i18n locale and auto-save to database
+watch(() => settings.value?.language, async (newLang, oldLang) => {
   if (newLang && newLang !== locale.value) {
     setLocale(newLang);
+    // Set cookie for persistence (direction is handled by useHead in plugin/layout)
+    if (import.meta.client) {
+      document.cookie = `i18n_redirected=${newLang}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+  }
+  // Auto-save language to database when changed (not on initial load)
+  if (newLang && oldLang && newLang !== oldLang) {
+    try {
+      await $fetch('/api/settings', {
+        method: 'POST',
+        body: { language: newLang },
+      });
+    } catch (e) {
+      console.error('Failed to save language setting:', e);
+    }
   }
 });
 
 const toast = useToast();
-
-// Theme definitions
-const themes = [
-  { id: 'default', name: 'settings.themeDefault', color: '#374151' },
-  { id: 'dark-grey', name: 'settings.themeDarkGrey', color: '#1f2937' },
-  { id: 'professional-blue', name: 'settings.themeProfessionalBlue', color: '#1e40af' },
-  { id: 'elegant-purple', name: 'settings.themeElegantPurple', color: '#6b21a8' },
-  { id: 'soft-green', name: 'settings.themeSoftGreen', color: '#166534' },
-];
-
-// Apply theme to document
-function applyTheme(themeId: string) {
-  if (import.meta.client) {
-    document.documentElement.setAttribute('data-theme', themeId);
-  }
-}
-
-// Watch for theme changes
-watch(() => settings.value?.theme, (newTheme) => {
-  if (newTheme) {
-    applyTheme(newTheme);
-  }
-}, { immediate: true });
 
 async function seedDatabase() {
   if (!isDev) return;
@@ -225,36 +217,6 @@ const ui = {
                   <option value="ar">{{ t('settings.languageAR') }}</option>
                 </select>
               </div>
-
-              <div class="sm:col-span-2">
-                <label :class="ui.label">{{ t('settings.theme') }}</label>
-                <div class="grid grid-cols-5 gap-3 mt-2">
-                  <button
-                    v-for="theme in themes"
-                    :key="theme.id"
-                    @click="settings.theme = theme.id as any"
-                    :class="[
-                      'relative flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all',
-                      settings.theme === theme.id
-                        ? 'border-gray-900 bg-gray-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    ]"
-                  >
-                    <div
-                      class="w-8 h-8 rounded-full mb-2 shadow-sm"
-                      :style="{ backgroundColor: theme.color }"
-                    />
-                    <span class="text-xs font-medium text-gray-700 text-center">
-                      {{ t(theme.name) }}
-                    </span>
-                    <Icon
-                      v-if="settings.theme === theme.id"
-                      name="lucide:check"
-                      class="absolute top-1 right-1 h-4 w-4 text-gray-900"
-                    />
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -413,13 +375,6 @@ const ui = {
                 </span>
               </button>
             </div>
-          </div>
-
-          <div class="bg-gray-50 px-4 py-3 border-t border-gray-100">
-            <p class="text-xs text-gray-500 text-center">
-              {{ t('settings.alertsSentTo') }}
-              <span class="font-medium text-gray-900">admin@atlas-inventory.app</span>
-            </p>
           </div>
         </div>
 

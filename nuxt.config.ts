@@ -30,12 +30,26 @@ export default defineNuxtConfig({
         { rel: 'apple-touch-icon', href: '/branding/apple-touch-icon.png' },
         { rel: 'manifest', href: '/manifest.json' },
       ],
+      // Inline script to set direction immediately based on cookie (prevents flicker)
+      script: [
+        {
+          innerHTML: `(function(){var c=document.cookie.match(/i18n_redirected=([^;]+)/);var l=c?c[1]:'fr';document.documentElement.dir=l==='ar'?'rtl':'ltr';document.documentElement.lang=l;})()`,
+          type: 'text/javascript',
+        },
+      ],
     },
   },
 
   hub: {
     database: true,
     kv: true,
+  },
+
+  // Session configuration for network access
+  nitro: {
+    experimental: {
+      openAPI: true,
+    },
   },
 
   // i18n configuration
@@ -46,16 +60,26 @@ export default defineNuxtConfig({
       { code: 'ar', name: 'العربية', file: 'ar.json', dir: 'rtl' },
     ],
     defaultLocale: 'fr',
-    lazy: true,
     langDir: 'locales',
     strategy: 'no_prefix',
-    detectBrowserLanguage: false,
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_redirected',
+      alwaysRedirect: false,
+      fallbackLocale: 'fr',
+    },
   },
 
   // Runtime config for admin operations
   runtimeConfig: {
     // Server-only (not exposed to client)
     adminSecretKey: '', // Set via NUXT_ADMIN_SECRET_KEY env var
+    session: {
+      cookie: {
+        sameSite: 'lax',
+        secure: false, // Set to true in production with HTTPS
+      },
+    },
   },
 
   // Pinia configuration

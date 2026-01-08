@@ -223,6 +223,49 @@ export default defineEventHandler(async (event) => {
     `CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id)`,
     `CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)`,
     `CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)`,
+    // Zakat Settings - singleton configuration table
+    `CREATE TABLE IF NOT EXISTS zakat_settings (
+      id integer PRIMARY KEY NOT NULL,
+      nisab_gold_grams real DEFAULT 85,
+      gold_price_per_gram real DEFAULT 0,
+      nisab_value real DEFAULT 0,
+      currency text DEFAULT 'DZD',
+      zakat_rate real DEFAULT 2.5,
+      cash_balance real DEFAULT 0,
+      receivables real DEFAULT 0,
+      other_assets real DEFAULT 0,
+      short_term_liabilities real DEFAULT 0,
+      hawl_start_date integer,
+      last_calculated_at integer,
+      updated_at integer
+    )`,
+    // Zakat History - records of calculations and payments
+    `CREATE TABLE IF NOT EXISTS zakat_history (
+      id text PRIMARY KEY NOT NULL,
+      zakat_date integer NOT NULL,
+      inventory_value real DEFAULT 0,
+      cash_balance real DEFAULT 0,
+      receivables real DEFAULT 0,
+      other_assets real DEFAULT 0,
+      total_assets real NOT NULL,
+      short_term_liabilities real DEFAULT 0,
+      net_zakatable_assets real NOT NULL,
+      nisab_at_time real NOT NULL,
+      meets_nisab integer DEFAULT 0,
+      zakat_amount real NOT NULL,
+      zakat_rate real DEFAULT 2.5,
+      is_paid integer DEFAULT 0,
+      paid_at integer,
+      paid_amount real,
+      payment_method text,
+      payment_reference text,
+      notes text,
+      currency text DEFAULT 'DZD',
+      created_at integer,
+      updated_at integer
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_zakat_history_date ON zakat_history(zakat_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_zakat_history_is_paid ON zakat_history(is_paid)`,
   ];
 
   const alterStatements = [

@@ -823,8 +823,8 @@ function getSupplierName(supplierId: string | null | undefined) {
     <!-- Variant Edit Modal -->
     <UiModal
       v-model:open="isVariantModalOpen"
-      title="Edit Variant"
-      :description="`Configure pricing, stock, and supplier for ${variantForm.name}`"
+      :title="t('products.edit_variant')"
+      :description="`${t('products.variant_config_description')} ${variantForm.name}`"
       size="lg"
     >
       <form id="variant-form" class="space-y-6" @submit.prevent="saveVariant">
@@ -833,13 +833,13 @@ function getSupplierName(supplierId: string | null | undefined) {
           <h3
             class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2"
           >
-            Identification
+            {{ t('products.identification') }}
           </h3>
           <div class="grid grid-cols-12 gap-4">
             <div class="col-span-12">
               <UiInput
                 v-model="variantForm.name"
-                label="Variant Name"
+                :label="t('products.variant') + ' ' + t('app.name')"
                 placeholder="Ex: Red / XL"
                 disabled
               />
@@ -848,7 +848,7 @@ function getSupplierName(supplierId: string | null | undefined) {
             <div class="col-span-6">
               <UiInput
                 v-model="variantForm.sku"
-                label="SKU / Ref"
+                :label="t('products.sku_ref')"
                 placeholder="PRO-001-RED"
               />
             </div>
@@ -856,8 +856,8 @@ function getSupplierName(supplierId: string | null | undefined) {
             <div class="col-span-6">
               <UiInput
                 v-model="variantForm.barcode"
-                label="Barcode (EAN)"
-                placeholder="Scan..."
+                :label="t('products.barcode_ean')"
+                :placeholder="t('products.barcode_placeholder')"
                 icon="lucide:scan-barcode"
               />
             </div>
@@ -869,14 +869,14 @@ function getSupplierName(supplierId: string | null | undefined) {
           <h3
             class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2"
           >
-            Financials
+            {{ t('products.financials') }}
           </h3>
           <div class="grid grid-cols-12 gap-4">
             <div class="col-span-4">
               <UiInput
                 v-model.number="variantForm.costPrice"
                 type="number"
-                label="Cost Price"
+                :label="t('products.cost_price')"
                 placeholder="0.00"
                 :icon="currencyIcon"
               />
@@ -886,7 +886,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="variantForm.marginPercent"
                 type="number"
-                label="Margin (%)"
+                :label="t('products.margin_percent')"
               />
             </div>
 
@@ -894,7 +894,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="variantForm.price"
                 type="number"
-                label="Selling Price"
+                :label="t('products.selling_price')"
                 :icon="currencyIcon"
                 class="font-bold"
               />
@@ -902,13 +902,13 @@ function getSupplierName(supplierId: string | null | undefined) {
 
             <div class="col-span-6">
               <label class="block text-sm font-medium text-gray-700 mb-1.5"
-                >Tax Rate</label
+                >{{ t('products.tax_rate') }}</label
               >
               <select
                 v-model="variantForm.taxId"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm h-9"
               >
-                <option value="">No Tax (0%)</option>
+                <option value="">{{ t('products.no_tax') }}</option>
                 <option v-for="tax in taxes" :key="tax.id" :value="tax.id">
                   {{ tax.name }} ({{ tax.rate * 100 }}%)
                 </option>
@@ -917,13 +917,13 @@ function getSupplierName(supplierId: string | null | undefined) {
 
             <div class="col-span-6">
               <label class="block text-sm font-medium text-gray-700 mb-1.5"
-                >Supplier</label
+                >{{ t('products.supplier') }}</label
               >
               <select
                 v-model="variantForm.supplierId"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm h-9"
               >
-                <option value="">Select supplier...</option>
+                <option value="">{{ t('products.select_supplier') }}</option>
                 <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">
                   {{ sup.name }}
                 </option>
@@ -937,7 +937,7 @@ function getSupplierName(supplierId: string | null | undefined) {
           <h3
             class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2"
           >
-            Inventory Control
+            {{ t('products.inventory_control') }}
           </h3>
           <div
             class="grid grid-cols-12 gap-4 bg-gray-50/50 p-4 rounded-lg border border-gray-200/50"
@@ -946,7 +946,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="variantForm.stockQuantity"
                 type="number"
-                label="Current Stock"
+                :label="t('products.current_stock')"
                 placeholder="0"
               />
             </div>
@@ -955,7 +955,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="variantForm.stockMin"
                 type="number"
-                label="Low Stock Alert"
+                :label="t('products.low_stock_alert')"
                 placeholder="0"
               />
             </div>
@@ -965,7 +965,7 @@ function getSupplierName(supplierId: string | null | undefined) {
 
       <template #footer>
         <UiButton variant="secondary" @click="isVariantModalOpen = false">
-          Cancel
+          {{ t('app.cancel') }}
         </UiButton>
 
         <UiButton
@@ -978,15 +978,15 @@ function getSupplierName(supplierId: string | null | undefined) {
             name="lucide:save"
             class="mr-2 h-4 w-4"
           />
-          Save Variant
+          {{ t('products.save_variant') }}
         </UiButton>
       </template>
     </UiModal>
 
     <UiModal
       v-model:open="isModalOpen"
-      :title="editingProduct ? 'Edit Product' : 'New Product'"
-      description="Fill in the details below to track this item in your inventory."
+      :title="editingProduct ? t('products.edit_product') : t('products.new_product')"
+      :description="t('products.fill_details')"
       size="lg"
     >
       <form id="product-form" class="space-y-6" @submit.prevent="saveProduct">
@@ -1000,8 +1000,8 @@ function getSupplierName(supplierId: string | null | undefined) {
             <div class="col-span-12">
               <UiInput
                 v-model="form.name"
-                label="Product Name"
-                placeholder="Ex: Wireless Mouse M100"
+                :label="t('products.product_name')"
+                :placeholder="t('products.product_name_placeholder')"
                 required
               />
             </div>
@@ -1009,30 +1009,30 @@ function getSupplierName(supplierId: string | null | undefined) {
             <div class="col-span-6 sm:col-span-4">
               <UiInput
                 v-model="form.sku"
-                label="SKU / Ref"
-                placeholder="PRO-001"
+                :label="t('products.sku_ref')"
+                :placeholder="t('products.sku_placeholder')"
               />
             </div>
 
             <div class="col-span-6 sm:col-span-4">
               <UiInput
                 v-model="form.barcode"
-                label="Barcode (EAN)"
-                placeholder="Scan..."
+                :label="t('products.barcode_ean')"
+                :placeholder="t('products.barcode_placeholder')"
                 icon="lucide:scan-barcode"
               />
             </div>
 
             <div class="col-span-12 sm:col-span-4">
               <label class="block text-sm font-medium text-gray-700 mb-1.5"
-                >Category</label
+                >{{ t('products.category') }}</label
               >
               <div class="relative">
                 <select
                   v-model="form.categoryId"
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm h-9"
                 >
-                  <option value="">Uncategorized</option>
+                  <option value="">{{ t('products.uncategorized') }}</option>
                   <option
                     v-for="cat in categories"
                     :key="cat.id"
@@ -1053,10 +1053,10 @@ function getSupplierName(supplierId: string | null | undefined) {
             <h3
               class="text-xs font-bold text-gray-900 uppercase tracking-wider"
             >
-              Product Variants
+              {{ t('products.product_variants') }}
             </h3>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600">Has Variants?</span>
+              <span class="text-sm text-gray-600">{{ t('products.has_variants') }}</span>
               <button
                 type="button"
                 class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
@@ -1075,13 +1075,13 @@ function getSupplierName(supplierId: string | null | undefined) {
             <!-- Options Builder -->
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <div class="flex justify-between items-center mb-3">
-                <h4 class="text-sm font-medium text-gray-900">Options</h4>
+                <h4 class="text-sm font-medium text-gray-900">{{ t('products.options') }}</h4>
                 <button
                   type="button"
                   class="text-xs text-primary-600 hover:text-primary-700 font-medium"
                   @click="addOption"
                 >
-                  + Add Option
+                  + {{ t('products.add_option') }}
                 </button>
               </div>
 
@@ -1095,7 +1095,7 @@ function getSupplierName(supplierId: string | null | undefined) {
                     <input
                       v-model="option.name"
                       type="text"
-                      placeholder="Name (e.g. Color)"
+                      :placeholder="t('products.option_name_placeholder')"
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm h-8"
                     />
                   </div>
@@ -1103,7 +1103,7 @@ function getSupplierName(supplierId: string | null | undefined) {
                     <input
                       v-model="option.valuesInput"
                       type="text"
-                      placeholder="Values (comma separated, e.g. Red, Blue)"
+                      :placeholder="t('products.option_values_placeholder')"
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm h-8"
                       @blur="updateOptionValues(idx)"
                     />
@@ -1120,7 +1120,7 @@ function getSupplierName(supplierId: string | null | undefined) {
                   v-if="form.options.length === 0"
                   class="text-center py-2 text-sm text-gray-500 italic"
                 >
-                  No options added. Click "Add Option" to start.
+                  {{ t('products.no_options') }}
                 </div>
               </div>
 
@@ -1130,7 +1130,7 @@ function getSupplierName(supplierId: string | null | undefined) {
                   class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 shadow-sm"
                   @click="generateVariants"
                 >
-                  Generate Variants
+                  {{ t('products.generate_variants') }}
                 </button>
               </div>
             </div>
@@ -1147,28 +1147,28 @@ function getSupplierName(supplierId: string | null | undefined) {
                       scope="col"
                       class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Variant
+                      {{ t('products.variant') }}
                     </th>
                     <th
                       scope="col"
                       class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
                     >
-                      Price
+                      {{ t('products.price') }}
                     </th>
                     <th
                       scope="col"
                       class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
                     >
-                      Stock
+                      {{ t('products.stock') }}
                     </th>
                     <th
                       scope="col"
                       class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
                     >
-                      SKU
+                      {{ t('products.sku') }}
                     </th>
                     <th scope="col" class="relative px-3 py-2">
-                      <span class="sr-only">Delete</span>
+                      <span class="sr-only">{{ t('app.delete') }}</span>
                     </th>
                   </tr>
                 </thead>
@@ -1222,14 +1222,14 @@ function getSupplierName(supplierId: string | null | undefined) {
           <h3
             class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2"
           >
-            Financials
+            {{ t('products.financials') }}
           </h3>
           <div class="grid grid-cols-12 gap-4">
             <div class="col-span-4">
               <UiInput
                 v-model.number="form.costPrice"
                 type="number"
-                label="Cost Price"
+                :label="t('products.cost_price')"
                 placeholder="0.00"
                 :icon="currencyIcon"
               />
@@ -1239,7 +1239,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="form.marginPercent"
                 type="number"
-                label="Margin (%)"
+                :label="t('products.margin_percent')"
               />
             </div>
 
@@ -1247,7 +1247,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="form.sellingPrice"
                 type="number"
-                label="Selling Price"
+                :label="t('products.selling_price')"
                 :icon="currencyIcon"
                 class="font-bold"
               />
@@ -1255,13 +1255,13 @@ function getSupplierName(supplierId: string | null | undefined) {
 
             <div class="col-span-6">
               <label class="block text-sm font-medium text-gray-700 mb-1.5"
-                >Tax Rate</label
+                >{{ t('products.tax_rate') }}</label
               >
               <select
                 v-model="form.taxId"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm h-9"
               >
-                <option value="">No Tax (0%)</option>
+                <option value="">{{ t('products.no_tax') }}</option>
                 <option v-for="tax in taxes" :key="tax.id" :value="tax.id">
                   {{ tax.name }} ({{ tax.rate * 100 }}%)
                 </option>
@@ -1270,13 +1270,13 @@ function getSupplierName(supplierId: string | null | undefined) {
 
             <div class="col-span-6">
               <label class="block text-sm font-medium text-gray-700 mb-1.5"
-                >Supplier</label
+                >{{ t('products.supplier') }}</label
               >
               <select
                 v-model="form.supplierId"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm h-9"
               >
-                <option value="">Select supplier...</option>
+                <option value="">{{ t('products.select_supplier') }}</option>
                 <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">
                   {{ sup.name }}
                 </option>
@@ -1289,7 +1289,7 @@ function getSupplierName(supplierId: string | null | undefined) {
           <h3
             class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2"
           >
-            Inventory Control
+            {{ t('products.inventory_control') }}
           </h3>
           <div
             class="grid grid-cols-12 gap-4 bg-gray-50/50 p-4 rounded-lg border border-gray-200/50"
@@ -1298,7 +1298,7 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="form.stockQuantity"
                 type="number"
-                label="Current Stock"
+                :label="t('products.current_stock')"
                 placeholder="0"
               />
             </div>
@@ -1307,23 +1307,23 @@ function getSupplierName(supplierId: string | null | undefined) {
               <UiInput
                 v-model.number="form.stockMin"
                 type="number"
-                label="Low Stock Alert"
+                :label="t('products.low_stock_alert')"
                 placeholder="0"
               />
             </div>
 
             <div class="col-span-4">
               <label class="block text-sm font-medium text-gray-700 mb-1.5"
-                >Unit Type</label
+                >{{ t('products.unit_type') }}</label
               >
               <select
                 v-model="form.unit"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm h-9"
               >
-                <option value="unit">Pieces (pcs)</option>
-                <option value="kg">Weight (kg)</option>
-                <option value="m">Length (m)</option>
-                <option value="l">Volume (L)</option>
+                <option value="unit">{{ t('products.pieces_unit') }}</option>
+                <option value="kg">{{ t('products.weight_unit') }}</option>
+                <option value="m">{{ t('products.length_unit') }}</option>
+                <option value="l">{{ t('products.volume_unit') }}</option>
               </select>
             </div>
           </div>
@@ -1332,12 +1332,12 @@ function getSupplierName(supplierId: string | null | undefined) {
 
       <template #footer>
         <UiButton variant="secondary" @click="isModalOpen = false">
-          Cancel
+          {{ t('app.cancel') }}
         </UiButton>
 
         <UiButton type="submit" form="product-form" :loading="isSubmitting">
           <Icon v-if="!isSubmitting" name="lucide:save" class="mr-2 h-4 w-4" />
-          {{ editingProduct ? 'Save Changes' : 'Create Product' }}
+          {{ editingProduct ? t('app.save') : t('products.add_product') }}
         </UiButton>
       </template>
     </UiModal>

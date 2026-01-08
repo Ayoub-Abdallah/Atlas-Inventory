@@ -12,6 +12,8 @@ const notifications = ref<Notification[]>([]);
 const readGeneratedIds = ref<Set<string>>(new Set());
 
 export function useNotifications() {
+  const { t } = useI18n();
+  
   // Fetch products to check for low stock
   const { data: products, refresh: refreshProducts } = useFetch(
     '/api/products',
@@ -34,8 +36,8 @@ export function useNotifications() {
             alerts.push({
               id,
               type: 'error',
-              title: 'Out of Stock',
-              description: `${product.name} is out of stock`,
+              title: t('notifications.out_of_stock'),
+              description: t('notifications.out_of_stock_desc', { name: product.name }),
               href: `/products/${product.id}`,
               read: readGeneratedIds.value.has(id),
               createdAt: new Date(),
@@ -45,8 +47,8 @@ export function useNotifications() {
             alerts.push({
               id,
               type: 'warning',
-              title: 'Low Stock Alert',
-              description: `${product.name} has only ${product.stockQuantity} units left (min: ${product.stockMin})`,
+              title: t('notifications.low_stock'),
+              description: t('notifications.low_stock_desc', { name: product.name, quantity: product.stockQuantity, min: product.stockMin }),
               href: `/products/${product.id}`,
               read: readGeneratedIds.value.has(id),
               createdAt: new Date(),
@@ -63,8 +65,8 @@ export function useNotifications() {
                 alerts.push({
                   id,
                   type: 'error',
-                  title: 'Out of Stock',
-                  description: `${product.name} - ${variant.name} is out of stock`,
+                  title: t('notifications.out_of_stock'),
+                  description: t('notifications.out_of_stock_desc', { name: `${product.name} - ${variant.name}` }),
                   href: `/products/${product.id}`,
                   read: readGeneratedIds.value.has(id),
                   createdAt: new Date(),
@@ -74,8 +76,8 @@ export function useNotifications() {
                 alerts.push({
                   id,
                   type: 'warning',
-                  title: 'Low Stock Alert',
-                  description: `${product.name} - ${variant.name} has only ${variant.stockQuantity} units left`,
+                  title: t('notifications.low_stock'),
+                  description: t('notifications.low_stock_desc_variant', { name: `${product.name} - ${variant.name}`, quantity: variant.stockQuantity }),
                   href: `/products/${product.id}`,
                   read: readGeneratedIds.value.has(id),
                   createdAt: new Date(),

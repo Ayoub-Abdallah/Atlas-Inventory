@@ -15,6 +15,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const { currencySymbol } = useSettings();
+const { t } = useI18n();
 
 const productId = route.params.id as string;
 
@@ -245,7 +246,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
           </h1>
           <p class="text-sm text-gray-500 flex items-center gap-2">
             <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{
-              product?.sku || 'No SKU'
+              product?.sku || t('products.no_sku')
             }}</span>
             <span v-if="product?.category" class="text-gray-400">•</span>
             <span v-if="product?.category">{{ product.category.name }}</span>
@@ -254,7 +255,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
       </div>
       <div class="flex gap-2">
         <UiButton variant="outline" @click="router.push('/products')">
-          Back to Products
+          {{ t('products.back_to_products') }}
         </UiButton>
       </div>
     </div>
@@ -264,8 +265,8 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
     </div>
 
     <div v-else-if="error" class="text-center py-12 text-red-600">
-      <p>Error loading product: {{ error.message }}</p>
-      <UiButton variant="outline" class="mt-4" @click="refresh">Retry</UiButton>
+      <p>{{ t('products.error_loading_product') }}: {{ error.message }}</p>
+      <UiButton variant="outline" class="mt-4" @click="refresh">{{ t('products.retry') }}</UiButton>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -274,20 +275,20 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
         <!-- General Info Card -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <h2 class="text-lg font-medium text-gray-900 mb-4">
-            General Information
+            {{ t('products.general_information') }}
           </h2>
           <div class="grid grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-500"
-                >Description</label
+                >{{ t('app.description') }}</label
               >
               <p class="mt-1 text-sm text-gray-900">
-                {{ product?.description || 'No description provided.' }}
+                {{ product?.description || t('products.no_description') }}
               </p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500"
-                >Barcode</label
+                >{{ t('products.barcode') }}</label
               >
               <p class="mt-1 text-sm text-gray-900 font-mono">
                 {{ product?.barcode || '—' }}
@@ -295,14 +296,14 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500"
-                >Stock</label
+                >{{ t('products.stock') }}</label
               >
               <p class="mt-1 text-sm text-gray-900">
                 {{ product?.stockQuantity }} {{ product?.unit }}
               </p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500">Tax</label>
+              <label class="block text-sm font-medium text-gray-500">{{ t('products.tax') }}</label>
               <p class="mt-1 text-sm text-gray-900">
                 {{ product?.tax?.name || '—' }} ({{
                   (product?.tax?.rate || 0) * 100
@@ -321,7 +322,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             class="px-6 py-4 border-b border-gray-200 flex justify-between items-center"
           >
             <h2 class="text-lg font-medium text-gray-900">
-              Variants
+              {{ t('products.variants') }}
               <span class="text-sm font-normal text-gray-500 ml-2"
                 >({{ variantsList.length }})</span
               >
@@ -333,7 +334,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
               @click="openVariantSupplierModal"
             >
               <Icon name="lucide:settings-2" class="h-4 w-4 mr-2" />
-              Supplier Availability
+              {{ t('products.supplier_availability') }}
             </UiButton>
           </div>
 
@@ -341,17 +342,17 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             <table class="w-full text-left text-sm">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-6 py-3 font-medium text-gray-500">Name</th>
-                  <th class="px-6 py-3 font-medium text-gray-500">SKU</th>
-                  <th class="px-6 py-3 font-medium text-gray-500">Barcode</th>
+                  <th class="px-6 py-3 font-medium text-gray-500">{{ t('app.name') }}</th>
+                  <th class="px-6 py-3 font-medium text-gray-500">{{ t('products.sku') }}</th>
+                  <th class="px-6 py-3 font-medium text-gray-500">{{ t('products.barcode') }}</th>
                   <th class="px-6 py-3 font-medium text-gray-500 text-right">
-                    Cost
+                    {{ t('products.cost') }}
                   </th>
                   <th class="px-6 py-3 font-medium text-gray-500 text-right">
-                    Price
+                    {{ t('products.price') }}
                   </th>
                   <th class="px-6 py-3 font-medium text-gray-500 text-right">
-                    Stock
+                    {{ t('products.stock') }}
                   </th>
                 </tr>
               </thead>
@@ -401,10 +402,10 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
           <div
             class="px-6 py-4 border-b border-gray-200 flex justify-between items-center"
           >
-            <h2 class="text-lg font-medium text-gray-900">Suppliers</h2>
+            <h2 class="text-lg font-medium text-gray-900">{{ t('products.suppliers') }}</h2>
             <UiButton size="sm" @click="openAddSupplierModal">
               <Icon name="lucide:plus" class="h-4 w-4 mr-2" />
-              Add Supplier
+              {{ t('products.add_supplier') }}
             </UiButton>
           </div>
 
@@ -412,22 +413,22 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             v-if="suppliersList.length === 0"
             class="p-8 text-center text-gray-500"
           >
-            No suppliers associated with this product yet.
+            {{ t('products.no_suppliers_yet') }}
           </div>
 
           <div v-else class="overflow-x-auto">
             <table class="w-full text-left text-sm">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-6 py-3 font-medium text-gray-500">Supplier</th>
-                  <th class="px-6 py-3 font-medium text-gray-500">SKU</th>
+                  <th class="px-6 py-3 font-medium text-gray-500">{{ t('products.supplier') }}</th>
+                  <th class="px-6 py-3 font-medium text-gray-500">{{ t('products.sku') }}</th>
                   <th class="px-6 py-3 font-medium text-gray-500 text-right">
-                    Price
+                    {{ t('products.price') }}
                   </th>
                   <th class="px-6 py-3 font-medium text-gray-500 text-right">
-                    Min Qty
+                    {{ t('products.min_qty') }}
                   </th>
-                  <th class="px-6 py-3 font-medium text-gray-500">Link</th>
+                  <th class="px-6 py-3 font-medium text-gray-500">{{ t('products.link') }}</th>
                   <th class="px-6 py-3 font-medium text-gray-500 w-24"></th>
                 </tr>
               </thead>
@@ -447,20 +448,20 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
                         class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
                       >
                         <Icon name="lucide:trophy" class="h-3 w-3 mr-1" />
-                        Best Price
+                        {{ t('products.best_price') }}
                       </span>
                       <span
                         v-if="sp.isPreferred"
                         class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
                       >
-                        Preferred
+                        {{ t('products.preferred') }}
                       </span>
                     </div>
                     <div
                       v-if="sp.leadTimeDays"
                       class="text-xs text-gray-400 mt-0.5"
                     >
-                      Lead time: {{ sp.leadTimeDays }} days
+                      {{ t('products.lead_time') }}: {{ sp.leadTimeDays }} {{ t('products.days') }}
                     </div>
                   </td>
                   <td class="px-6 py-3 font-mono text-gray-500 text-xs">
@@ -488,7 +489,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
                       class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-800 transition-colors"
                     >
                       <Icon name="lucide:external-link" class="h-4 w-4" />
-                      <span class="text-xs">Order</span>
+                      <span class="text-xs">{{ t('products.order') }}</span>
                     </a>
                     <span v-else class="text-gray-400 text-xs">—</span>
                   </td>
@@ -535,12 +536,12 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
       <div class="space-y-6">
         <!-- Pricing Card -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-          <h2 class="text-lg font-medium text-gray-900 mb-4">Pricing</h2>
+          <h2 class="text-lg font-medium text-gray-900 mb-4">{{ t('products.pricing') }}</h2>
           <div class="space-y-4">
             <div
               class="flex justify-between items-center py-2 border-b border-gray-100"
             >
-              <span class="text-sm text-gray-500">Cost Price</span>
+              <span class="text-sm text-gray-500">{{ t('products.cost_price') }}</span>
               <span class="font-medium"
                 >{{ product?.costPrice?.toFixed(2) }} {{ currencySymbol }}</span
               >
@@ -548,12 +549,12 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             <div
               class="flex justify-between items-center py-2 border-b border-gray-100"
             >
-              <span class="text-sm text-gray-500">Margin</span>
+              <span class="text-sm text-gray-500">{{ t('products.margin') }}</span>
               <span class="font-medium">{{ product?.marginPercent }}%</span>
             </div>
             <div class="flex justify-between items-center py-2">
               <span class="text-sm text-gray-900 font-medium"
-                >Selling Price</span
+                >{{ t('products.selling_price') }}</span
               >
               <span class="text-lg font-bold text-primary-600">
                 {{ product?.sellingPrice?.toFixed(2) }} {{ currencySymbol }}
@@ -570,18 +571,18 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
           <div class="flex items-center gap-2 mb-4">
             <Icon name="lucide:trophy" class="h-5 w-5 text-green-600" />
             <h2 class="text-lg font-medium text-green-900">
-              Best Supplier Price
+              {{ t('products.best_supplier_price') }}
             </h2>
           </div>
           <div class="space-y-3">
             <div class="flex justify-between items-center">
-              <span class="text-sm text-green-700">Supplier</span>
+              <span class="text-sm text-green-700">{{ t('products.supplier') }}</span>
               <span class="font-medium text-green-900">{{
                 bestSupplier.supplier.name
               }}</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-sm text-green-700">Price</span>
+              <span class="text-sm text-green-700">{{ t('products.price') }}</span>
               <span class="text-xl font-bold text-green-600">
                 {{ bestSupplier.price.toFixed(2) }} {{ currencySymbol }}
               </span>
@@ -590,9 +591,9 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
               v-if="bestSupplier.leadTimeDays"
               class="flex justify-between items-center"
             >
-              <span class="text-sm text-green-700">Lead Time</span>
+              <span class="text-sm text-green-700">{{ t('products.lead_time') }}</span>
               <span class="font-medium text-green-900"
-                >{{ bestSupplier.leadTimeDays }} days</span
+                >{{ bestSupplier.leadTimeDays }} {{ t('products.days') }}</span
               >
             </div>
             <a
@@ -603,19 +604,19 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
               class="mt-4 w-full inline-flex justify-center items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <Icon name="lucide:shopping-cart" class="h-4 w-4" />
-              Order from Supplier
+              {{ t('products.order_from_supplier') }}
             </a>
           </div>
         </div>
 
         <!-- Stock Summary -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-          <h2 class="text-lg font-medium text-gray-900 mb-4">Stock Summary</h2>
+          <h2 class="text-lg font-medium text-gray-900 mb-4">{{ t('products.stock_summary') }}</h2>
           <div class="space-y-3">
             <div
               class="flex justify-between items-center py-2 border-b border-gray-100"
             >
-              <span class="text-sm text-gray-500">Product Stock</span>
+              <span class="text-sm text-gray-500">{{ t('products.product_stock') }}</span>
               <span class="font-medium"
                 >{{ product?.stockQuantity }} {{ product?.unit }}</span
               >
@@ -624,7 +625,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
               v-if="variantsList.length > 0"
               class="flex justify-between items-center py-2 border-b border-gray-100"
             >
-              <span class="text-sm text-gray-500">Total Variants Stock</span>
+              <span class="text-sm text-gray-500">{{ t('products.total_variants_stock') }}</span>
               <span class="font-medium">
                 {{
                   variantsList.reduce(
@@ -635,7 +636,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
               </span>
             </div>
             <div class="flex justify-between items-center py-2">
-              <span class="text-sm text-gray-500">Min Stock Alert</span>
+              <span class="text-sm text-gray-500">{{ t('products.min_stock_alert') }}</span>
               <span class="font-medium">{{ product?.stockMin }}</span>
             </div>
           </div>
@@ -644,17 +645,17 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
     </div>
 
     <!-- Add Supplier Modal -->
-    <UiModal v-model:open="isAddSupplierModalOpen" title="Add Supplier">
+    <UiModal v-model:open="isAddSupplierModalOpen" :title="t('products.add_supplier')">
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
-            >Supplier</label
+            >{{ t('products.supplier') }}</label
           >
           <select
             v-model="supplierForm.supplierId"
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
           >
-            <option value="" disabled>Select a supplier</option>
+            <option value="" disabled>{{ t('products.select_supplier') }}</option>
             <option v-for="s in allSuppliers" :key="s.id" :value="s.id">
               {{ s.name }}
             </option>
@@ -664,34 +665,34 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
           <UiInput
             v-model="supplierForm.price"
             type="number"
-            label="Purchase Price"
+            :label="t('products.purchase_price')"
             step="0.01"
             :min="0"
           />
           <UiInput
             v-model="supplierForm.minQuantity"
             type="number"
-            label="Min Quantity"
+            :label="t('products.min_quantity')"
             :min="1"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <UiInput
             v-model="supplierForm.supplierSku"
-            label="Supplier SKU"
-            placeholder="Optional"
+            :label="t('products.supplier_sku')"
+            :placeholder="t('products.supplier_sku_optional')"
           />
           <UiInput
             v-model="supplierForm.leadTimeDays"
             type="number"
-            label="Lead Time (Days)"
+            :label="t('products.lead_time_days')"
             :min="0"
           />
         </div>
         <UiInput
           v-model="supplierForm.purchaseUrl"
-          label="Purchase URL"
-          placeholder="https://supplier.com/product/..."
+          :label="t('products.purchase_url')"
+          :placeholder="t('products.purchase_url_placeholder')"
         />
         <div class="flex items-center gap-2">
           <input
@@ -701,53 +702,53 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <label for="isPreferred" class="text-sm text-gray-700"
-            >Preferred Supplier</label
+            >{{ t('products.preferred_supplier') }}</label
           >
         </div>
       </div>
       <template #footer>
         <UiButton variant="outline" @click="isAddSupplierModalOpen = false"
-          >Cancel</UiButton
+          >{{ t('app.cancel') }}</UiButton
         >
-        <UiButton @click="saveSupplier">Add Supplier</UiButton>
+        <UiButton @click="saveSupplier">{{ t('products.add_supplier') }}</UiButton>
       </template>
     </UiModal>
 
     <!-- Edit Supplier Modal -->
-    <UiModal v-model:open="isEditSupplierModalOpen" title="Edit Supplier Price">
+    <UiModal v-model:open="isEditSupplierModalOpen" :title="t('products.edit_supplier_price')">
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <UiInput
             v-model="supplierForm.price"
             type="number"
-            label="Purchase Price"
+            :label="t('products.purchase_price')"
             step="0.01"
             :min="0"
           />
           <UiInput
             v-model="supplierForm.minQuantity"
             type="number"
-            label="Min Quantity"
+            :label="t('products.min_quantity')"
             :min="1"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <UiInput
             v-model="supplierForm.supplierSku"
-            label="Supplier SKU"
-            placeholder="Optional"
+            :label="t('products.supplier_sku')"
+            :placeholder="t('products.supplier_sku_optional')"
           />
           <UiInput
             v-model="supplierForm.leadTimeDays"
             type="number"
-            label="Lead Time (Days)"
+            :label="t('products.lead_time_days')"
             :min="0"
           />
         </div>
         <UiInput
           v-model="supplierForm.purchaseUrl"
-          label="Purchase URL"
-          placeholder="https://supplier.com/product/..."
+          :label="t('products.purchase_url')"
+          :placeholder="t('products.purchase_url_placeholder')"
         />
         <div class="flex items-center gap-2">
           <input
@@ -757,27 +758,27 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <label for="isPreferredEdit" class="text-sm text-gray-700"
-            >Preferred Supplier</label
+            >{{ t('products.preferred_supplier') }}</label
           >
         </div>
       </div>
       <template #footer>
         <UiButton variant="outline" @click="isEditSupplierModalOpen = false"
-          >Cancel</UiButton
+          >{{ t('app.cancel') }}</UiButton
         >
-        <UiButton @click="saveSupplier">Save Changes</UiButton>
+        <UiButton @click="saveSupplier">{{ t('products.save_changes') }}</UiButton>
       </template>
     </UiModal>
 
     <!-- History Modal -->
-    <UiModal v-model:open="isHistoryModalOpen" title="Price History">
+    <UiModal v-model:open="isHistoryModalOpen" :title="t('products.price_history')">
       <div v-if="selectedSupplierPrice" class="space-y-4">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-medium text-gray-900">
             {{ selectedSupplierPrice.supplier.name }}
           </h3>
           <span class="text-sm text-gray-500"
-            >Current: {{ selectedSupplierPrice.price.toFixed(2) }}
+            >{{ t('products.current') }}: {{ selectedSupplierPrice.price.toFixed(2) }}
             {{ currencySymbol }}</span
           >
         </div>
@@ -786,9 +787,9 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
           <table class="w-full text-sm text-left">
             <thead class="bg-gray-50 sticky top-0">
               <tr>
-                <th class="px-4 py-2 font-medium text-gray-500">Date</th>
+                <th class="px-4 py-2 font-medium text-gray-500">{{ t('app.date') }}</th>
                 <th class="px-4 py-2 font-medium text-gray-500 text-right">
-                  Price
+                  {{ t('products.price') }}
                 </th>
               </tr>
             </thead>
@@ -806,7 +807,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
               </tr>
               <tr v-if="!selectedSupplierPrice.priceHistory?.length">
                 <td colspan="2" class="px-4 py-4 text-center text-gray-400">
-                  No history available
+                  {{ t('products.no_history') }}
                 </td>
               </tr>
             </tbody>
@@ -814,20 +815,19 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
         </div>
       </div>
       <template #footer>
-        <UiButton @click="isHistoryModalOpen = false">Close</UiButton>
+        <UiButton @click="isHistoryModalOpen = false">{{ t('app.close') }}</UiButton>
       </template>
     </UiModal>
 
     <!-- Variant-Supplier Availability Modal -->
     <UiModal
       v-model:open="isVariantSupplierModalOpen"
-      title="Variant Supplier Availability"
+      :title="t('products.variant_supplier_availability')"
       size="lg"
     >
       <div class="space-y-4">
         <p class="text-sm text-gray-500">
-          By default, all variants are available from all suppliers. Uncheck a
-          box to mark a variant as unavailable from that supplier.
+          {{ t('products.variant_supplier_description') }}
         </p>
 
         <div class="overflow-x-auto border rounded-lg">
@@ -835,7 +835,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
             <thead class="bg-gray-50 border-b">
               <tr>
                 <th class="px-4 py-3 text-left font-medium text-gray-500">
-                  Variant
+                  {{ t('products.variant') }}
                 </th>
                 <th
                   v-for="sp in suppliersList"
@@ -881,7 +881,7 @@ function isBestPrice(sp: ExtendedSupplierPrice) {
         </div>
       </div>
       <template #footer>
-        <UiButton @click="isVariantSupplierModalOpen = false">Close</UiButton>
+        <UiButton @click="isVariantSupplierModalOpen = false">{{ t('app.close') }}</UiButton>
       </template>
     </UiModal>
   </div>

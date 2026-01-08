@@ -550,3 +550,71 @@ export const settings = sqliteTable('settings', {
 
 export type Settings = typeof settings.$inferSelect;
 export type NewSettings = typeof settings.$inferInsert;
+
+// ============================================================================
+// ZAKAT SETTINGS
+// Stores configuration for Zakat calculation (Nisab threshold, gold price, etc.)
+// ============================================================================
+export const zakatSettings = sqliteTable('zakat_settings', {
+  id: integer('id').primaryKey(), // Singleton pattern, always ID 1
+  nisabGoldGrams: real('nisab_gold_grams').default(85), // Standard: 85 grams of gold
+  goldPricePerGram: real('gold_price_per_gram').default(0), // Current gold price in currency
+  nisabValue: real('nisab_value').default(0), // Calculated: goldPricePerGram * nisabGoldGrams
+  currency: text('currency').default('DZD'),
+  zakatRate: real('zakat_rate').default(2.5), // Standard: 2.5%
+  // Manual adjustments for assets not tracked in inventory
+  cashBalance: real('cash_balance').default(0),
+  receivables: real('receivables').default(0),
+  otherAssets: real('other_assets').default(0),
+  shortTermLiabilities: real('short_term_liabilities').default(0),
+  // Calculation period tracking (lunar year / Hawl)
+  hawlStartDate: integer('hawl_start_date', { mode: 'timestamp' }),
+  lastCalculatedAt: integer('last_calculated_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export type ZakatSettings = typeof zakatSettings.$inferSelect;
+export type NewZakatSettings = typeof zakatSettings.$inferInsert;
+
+// ============================================================================
+// ZAKAT HISTORY
+// Records of Zakat calculations and payments over time
+// ============================================================================
+export const zakatHistory = sqliteTable('zakat_history', {
+  id: text('id').primaryKey(),
+  zakatDate: integer('zakat_date', { mode: 'timestamp' }).notNull(), // Date zakat was calculated/due
+  // Asset breakdown at time of calculation
+  inventoryValue: real('inventory_value').default(0), // Total inventory at selling price
+  cashBalance: real('cash_balance').default(0),
+  receivables: real('receivables').default(0),
+  otherAssets: real('other_assets').default(0),
+  totalAssets: real('total_assets').notNull(), // Sum of above
+  // Liabilities
+  shortTermLiabilities: real('short_term_liabilities').default(0),
+  // Net calculation
+  netZakatableAssets: real('net_zakatable_assets').notNull(), // totalAssets - liabilities
+  nisabAtTime: real('nisab_at_time').notNull(), // Nisab threshold at calculation time
+  meetsNisab: integer('meets_nisab', { mode: 'boolean' }).default(false),
+  zakatAmount: real('zakat_amount').notNull(), // 2.5% if meets Nisab, else 0
+  zakatRate: real('zakat_rate').default(2.5), // Rate used for calculation
+  // Payment tracking
+  isPaid: integer('is_paid', { mode: 'boolean' }).default(false),
+  paidAt: integer('paid_at', { mode: 'timestamp' }),
+  paidAmount: real('paid_amount'), // Actual amount paid (may differ)
+  paymentMethod: text('payment_method'), // cash, bank, charity org, etc.
+  paymentReference: text('payment_reference'), // Receipt number, etc.
+  // Additional info
+  notes: text('notes'),
+  currency: text('currency').default('DZD'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export type ZakatHistory = typeof zakatHistory.$inferSelect;
+export type NewZakatHistory = typeof zakatHistory.$inferInsert;

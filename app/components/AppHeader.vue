@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -44,18 +45,22 @@ onUnmounted(() => {
 const breadcrumbs = computed(() => {
   const path = route.path;
   if (path === '/') {
-    return [{ name: 'Dashboard', href: '/', icon: 'lucide:layout-dashboard' }];
+    return [{ name: t('nav.dashboard'), href: '/', icon: 'lucide:layout-dashboard' }];
   }
 
   const segments = path.split('/').filter(Boolean);
   const crumbs: { name: string; href: string; icon?: string }[] = [
-    { name: 'Dashboard', href: '/', icon: 'lucide:home' },
+    { name: t('nav.dashboard'), href: '/', icon: 'lucide:home' },
   ];
 
   let currentPath = '';
   for (const segment of segments) {
     currentPath += `/${segment}`;
-    const name = segment.charAt(0).toUpperCase() + segment.slice(1);
+    // Try to get translation from nav, fallback to capitalized segment
+    const translationKey = `nav.${segment}`;
+    const translated = t(translationKey);
+    // If translation key returns the same key, fallback to capitalized segment
+    const name = translated !== translationKey ? translated : segment.charAt(0).toUpperCase() + segment.slice(1);
     crumbs.push({ name, href: currentPath });
   }
 
@@ -212,10 +217,10 @@ onMounted(() => {
     <!-- Left side: Breadcrumbs -->
     <nav class="flex items-center gap-2 text-sm">
       <template v-for="(crumb, index) in breadcrumbs" :key="crumb.href">
-        <!-- Separator -->
+        <!-- Separator - flip for RTL -->
         <Icon
           v-if="index > 0"
-          name="lucide:chevron-right"
+          :name="locale === 'ar' ? 'lucide:chevron-left' : 'lucide:chevron-right'"
           class="h-4 w-4 text-gray-400"
         />
 
@@ -284,13 +289,13 @@ onMounted(() => {
             <div
               class="flex items-center justify-between border-b border-gray-100 px-4 py-3"
             >
-              <h3 class="font-semibold text-gray-900">Notifications</h3>
+              <h3 class="font-semibold text-gray-900">{{ t('app.notifications') }}</h3>
               <button
                 v-if="unreadCount > 0"
                 class="text-xs text-primary-600 hover:text-primary-700 font-medium"
                 @click="markAllAsRead"
               >
-                Mark all as read
+                {{ t('app.mark_all_read') }}
               </button>
             </div>
 
@@ -350,7 +355,7 @@ onMounted(() => {
                 class="flex flex-col items-center justify-center py-8 text-gray-400"
               >
                 <Icon name="lucide:bell-off" class="h-8 w-8 mb-2" />
-                <p class="text-sm">No notifications</p>
+                <p class="text-sm">{{ t('app.no_notifications') }}</p>
               </div>
             </div>
 
@@ -364,8 +369,8 @@ onMounted(() => {
                 class="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 @click="closeNotifications"
               >
-                View all activity
-                <Icon name="lucide:arrow-right" class="h-4 w-4" />
+                {{ t('app.view_all_activity') }}
+                <Icon :name="locale === 'ar' ? 'lucide:arrow-left' : 'lucide:arrow-right'" class="h-4 w-4" />
               </NuxtLink>
             </div>
           </div>
@@ -380,13 +385,13 @@ onMounted(() => {
         <NuxtLink to="/movements">
           <UiButton variant="outline" size="sm" class="gap-2">
             <Icon name="lucide:arrow-down" class="h-4 w-4 text-emerald-600" />
-            <span>In</span>
+            <span>{{ t('stock.stock_in') }}</span>
           </UiButton>
         </NuxtLink>
         <NuxtLink to="/movements">
           <UiButton variant="outline" size="sm" class="gap-2">
             <Icon name="lucide:arrow-up" class="h-4 w-4 text-red-600" />
-            <span>Out</span>
+            <span>{{ t('stock.stock_out') }}</span>
           </UiButton>
         </NuxtLink>
         <NuxtLink to="/products">
@@ -396,7 +401,7 @@ onMounted(() => {
             class="gap-2 shadow-md shadow-primary-500/20"
           >
             <Icon name="lucide:plus" class="h-4 w-4" />
-            <span>Product</span>
+            <span>{{ t('products.add_product') }}</span>
           </UiButton>
         </NuxtLink>
       </div>
@@ -436,7 +441,7 @@ onMounted(() => {
                 id="global-search"
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search products, suppliers, categories..."
+                :placeholder="t('app.search_placeholder')"
                 class="h-10 flex-1 bg-transparent text-base outline-none placeholder:text-gray-400"
                 @keydown.escape.stop.prevent="closeSearch"
               />
@@ -455,7 +460,7 @@ onMounted(() => {
               <p
                 class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
               >
-                Results ({{ filteredResults.length }})
+                {{ t('app.results') }} ({{ filteredResults.length }})
               </p>
               <div class="flex flex-col p-2 max-h-64 overflow-y-auto">
                 <button
@@ -493,7 +498,7 @@ onMounted(() => {
                         result.type === 'category',
                     }"
                   >
-                    {{ result.type }}
+                    {{ t(`app.${result.type}`) }}
                   </span>
                 </button>
               </div>
@@ -508,7 +513,7 @@ onMounted(() => {
                 class="flex flex-col items-center justify-center py-8 text-gray-400"
               >
                 <Icon name="lucide:search-x" class="h-8 w-8 mb-2" />
-                <p class="text-sm">No results found for "{{ searchQuery }}"</p>
+                <p class="text-sm">{{ t('app.no_results') }} "{{ searchQuery }}"</p>
               </div>
             </div>
 
@@ -517,7 +522,7 @@ onMounted(() => {
               <p
                 class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
               >
-                Quick Links
+                {{ t('app.quick_links') }}
               </p>
               <div class="flex flex-col p-2">
                 <NuxtLink
@@ -530,7 +535,7 @@ onMounted(() => {
                   >
                     <Icon name="lucide:package" class="h-4 w-4" />
                   </div>
-                  <span>Products</span>
+                  <span>{{ t('nav.products') }}</span>
                 </NuxtLink>
                 <NuxtLink
                   to="/movements"
@@ -542,7 +547,7 @@ onMounted(() => {
                   >
                     <Icon name="lucide:arrow-left-right" class="h-4 w-4" />
                   </div>
-                  <span>Stock Movements</span>
+                  <span>{{ t('app.stock_movements') }}</span>
                 </NuxtLink>
                 <NuxtLink
                   to="/suppliers"
@@ -554,7 +559,7 @@ onMounted(() => {
                   >
                     <Icon name="lucide:truck" class="h-4 w-4" />
                   </div>
-                  <span>Suppliers</span>
+                  <span>{{ t('nav.suppliers') }}</span>
                 </NuxtLink>
               </div>
             </div>

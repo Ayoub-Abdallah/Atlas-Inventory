@@ -2,27 +2,18 @@
 const { loggedIn } = useUserSession();
 const { locale } = useI18n();
 
-// Computed RTL direction
-const isRtl = computed(() => locale.value === 'ar');
-
-// Update document direction when locale changes
-watch(locale, (newLocale) => {
-  if (import.meta.client) {
-    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = newLocale;
-  }
-}, { immediate: true });
-
-// Set initial direction on mount
-onMounted(() => {
-  document.documentElement.dir = locale.value === 'ar' ? 'rtl' : 'ltr';
-  document.documentElement.lang = locale.value;
+// Use useHead to set HTML attributes - this works on both server and client
+useHead({
+  htmlAttrs: {
+    dir: () => locale.value === 'ar' ? 'rtl' : 'ltr',
+    lang: () => locale.value,
+  },
 });
 </script>
 
 <template>
   <!-- Main layout when authenticated -->
-  <div v-if="loggedIn" class="flex h-screen overflow-hidden bg-gray-100" :class="{ 'flex-row-reverse': isRtl }">
+  <div v-if="loggedIn" class="layout-container flex h-screen overflow-hidden bg-gray-100">
     <!-- Sidebar -->
     <AppSidebar />
 

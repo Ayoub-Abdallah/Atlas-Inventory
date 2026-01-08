@@ -18,6 +18,7 @@ const navigation = computed(() => [
 const secondaryNavigation = computed(() => {
   const items = [
     { name: t('nav.taxes'), href: '/taxes', icon: 'lucide:percent' },
+    { name: t('nav.zakat'), href: '/zakat', icon: 'lucide:coins' },
     { name: t('nav.settings'), href: '/settings', icon: 'lucide:settings' },
   ];
 

@@ -36,6 +36,11 @@ export default defineEventHandler(async (event) => {
     '/api/__clear',
   ];
 
+  // Settings GET is public for language/theme loading
+  if (path === '/api/settings' && method === 'GET') {
+    return;
+  }
+
   // These routes have their own secret-based protection
   if (publicRoutes.includes(path)) {
     return;

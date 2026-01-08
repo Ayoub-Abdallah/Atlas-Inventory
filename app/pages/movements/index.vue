@@ -162,7 +162,7 @@ async function createMovement() {
 }
 
 function getMovementType(type: string) {
-  return movementTypes.find((t) => t.value === type) || movementTypes[0];
+  return movementTypes.value.find((t) => t.value === type) || movementTypes.value[0];
 }
 
 function formatDate(date: Date | string) {
@@ -235,7 +235,7 @@ function formatDate(date: Date | string) {
           <input
             v-model="filters.search"
             type="text"
-            placeholder="Search reference, product..."
+            :placeholder="t('movements.search_placeholder')"
             class="input pl-8 h-8 text-xs"
           />
         </div>
@@ -245,10 +245,10 @@ function formatDate(date: Date | string) {
           v-model="filters.type"
           class="input h-8 text-xs w-auto min-w-[120px]"
         >
-          <option value="">All types</option>
-          <option value="in">Stock In</option>
-          <option value="out">Stock Out</option>
-          <option value="adjustment">Adjustment</option>
+          <option value="">{{ t('movements.all_types') }}</option>
+          <option value="in">{{ t('movements.type_in') }}</option>
+          <option value="out">{{ t('movements.type_out') }}</option>
+          <option value="adjustment">{{ t('movements.type_adjustment') }}</option>
         </select>
 
         <!-- Product filter -->
@@ -256,7 +256,7 @@ function formatDate(date: Date | string) {
           v-model="filters.productId"
           class="input h-8 text-xs w-auto min-w-[150px]"
         >
-          <option value="">All products</option>
+          <option value="">{{ t('movements.all_products') }}</option>
           <option
             v-for="product in products"
             :key="product.id"
@@ -273,12 +273,12 @@ function formatDate(date: Date | string) {
           @click="clearFilters"
         >
           <Icon name="lucide:x" class="h-3.5 w-3.5" />
-          Clear
+          {{ t('movements.clear_filters') }}
         </button>
 
         <!-- Results count -->
         <span v-if="movements" class="text-xs text-gray-400 ml-auto">
-          {{ filteredMovements.length }} of {{ movements.length }} movements
+          {{ t('movements.count_of_total', { count: filteredMovements.length, total: movements.length }) }}
         </span>
       </div>
     </div>
@@ -289,8 +289,8 @@ function formatDate(date: Date | string) {
         :columns="columns"
         :data="filteredMovements"
         :loading="pending"
-        empty-title="No movements"
-        empty-description="Record stock changes here."
+        :empty-title="t('movements.no_movements')"
+        :empty-description="t('movements.no_movements_description')"
         empty-icon="lucide:arrow-left-right"
       >
         <template #date="{ item }">
@@ -380,7 +380,7 @@ function formatDate(date: Date | string) {
     </div>
 
     <!-- Create Modal -->
-    <UiModal v-model:open="isModalOpen" title="New Movement">
+    <UiModal v-model:open="isModalOpen" :title="t('movements.new_movement')">
       <form
         id="movement-form"
         class="space-y-4"
@@ -388,22 +388,22 @@ function formatDate(date: Date | string) {
       >
         <div>
           <label class="label"
-            >Product <span class="text-red-500">*</span></label
+            >{{ t('movements.product') }} <span class="text-red-500">*</span></label
           >
           <select v-model="form.productId" class="input" required>
-            <option value="">Select product</option>
+            <option value="">{{ t('movements.select_product_placeholder') }}</option>
             <option
               v-for="product in products"
               :key="product.id"
               :value="product.id"
             >
-              {{ product.name }} ({{ product.stockQuantity }} in stock)
+              {{ product.name }} ({{ product.stockQuantity }} {{ t('movements.in_stock') }})
             </option>
           </select>
         </div>
 
         <div>
-          <label class="label">Type <span class="text-red-500">*</span></label>
+          <label class="label">{{ t('movements.type') }} <span class="text-red-500">*</span></label>
           <div class="grid grid-cols-3 gap-2">
             <button
               v-for="type in movementTypes"
@@ -430,7 +430,7 @@ function formatDate(date: Date | string) {
 
         <div>
           <label class="label"
-            >Quantity <span class="text-red-500">*</span></label
+            >{{ t('movements.quantity') }} <span class="text-red-500">*</span></label
           >
           <input
             v-model.number="form.quantity"
@@ -442,9 +442,9 @@ function formatDate(date: Date | string) {
         </div>
 
         <div v-if="form.type === 'in'">
-          <label class="label">Supplier</label>
+          <label class="label">{{ t('movements.supplier') }}</label>
           <select v-model="form.supplierId" class="input">
-            <option value="">Select (optional)</option>
+            <option value="">{{ t('movements.select_optional') }}</option>
             <option
               v-for="supplier in suppliers"
               :key="supplier.id"
@@ -456,20 +456,20 @@ function formatDate(date: Date | string) {
         </div>
 
         <div>
-          <label class="label">Reference</label>
+          <label class="label">{{ t('movements.reference') }}</label>
           <input
             v-model="form.reference"
             class="input"
-            placeholder="Order #, Invoice #"
+            :placeholder="t('movements.reference_placeholder')"
           />
         </div>
 
         <div>
-          <label class="label">Notes</label>
+          <label class="label">{{ t('movements.notes') }}</label>
           <textarea
             v-model="form.reason"
             class="input min-h-[60px] resize-none"
-            placeholder="Optional notes..."
+            :placeholder="t('movements.notes_placeholder')"
           />
         </div>
       </form>
@@ -480,7 +480,7 @@ function formatDate(date: Date | string) {
           class="btn-secondary"
           @click="isModalOpen = false"
         >
-          Cancel
+          {{ t('app.cancel') }}
         </button>
         <button
           type="submit"
@@ -493,7 +493,7 @@ function formatDate(date: Date | string) {
             name="lucide:loader-2"
             class="h-3.5 w-3.5 animate-spin"
           />
-          Record
+          {{ t('movements.record') }}
         </button>
       </template>
     </UiModal>

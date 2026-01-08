@@ -8,6 +8,7 @@ interface User {
   createdAt: string;
 }
 
+const { t, locale } = useI18n();
 const { user: currentUser } = useAuth();
 const toast = useToast();
 
@@ -53,12 +54,12 @@ function openEditModal(user: User) {
 
 async function createUser() {
   if (!form.name.trim() || !form.email.trim() || !form.password) {
-    toast.error('Please fill all fields');
+    toast.error(t('errors.fill_required'));
     return;
   }
 
   if (form.password.length < 8) {
-    toast.error('Password must be at least 8 characters');
+    toast.error(t('errors.password_min_length'));
     return;
   }
 
@@ -75,12 +76,12 @@ async function createUser() {
       },
     });
 
-    toast.success('User created successfully');
+    toast.success(t('users.user_created'));
     showModal.value = false;
     await refresh();
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } };
-    toast.error(err.data?.message || 'Failed to create user');
+    toast.error(err.data?.message || t('errors.generic'));
   } finally {
     isSubmitting.value = false;
   }
@@ -90,12 +91,12 @@ async function updateUser() {
   if (!editingUser.value) return;
 
   if (!editForm.name.trim() || !editForm.email.trim()) {
-    toast.error('Name and email are required');
+    toast.error(t('errors.fill_required'));
     return;
   }
 
   if (editForm.password && editForm.password.length < 8) {
-    toast.error('Password must be at least 8 characters');
+    toast.error(t('errors.password_min_length'));
     return;
   }
 
@@ -122,13 +123,13 @@ async function updateUser() {
       body,
     });
 
-    toast.success('User updated successfully');
+    toast.success(t('users.user_updated'));
     showEditModal.value = false;
     editingUser.value = null;
     await refresh();
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } };
-    toast.error(err.data?.message || 'Failed to update user');
+    toast.error(err.data?.message || t('errors.generic'));
   } finally {
     isSubmitting.value = false;
   }
@@ -136,26 +137,26 @@ async function updateUser() {
 
 async function deleteUser(user: User) {
   if (user.id === currentUser.value?.id) {
-    toast.error('You cannot delete your own account');
+    toast.error(t('users.cannot_delete_self'));
     return;
   }
 
-  if (!confirm(`Are you sure you want to delete ${user.name}?`)) {
+  if (!confirm(t('users.confirm_delete', { name: user.name }))) {
     return;
   }
 
   try {
     await $fetch(`/api/users/${user.id}`, { method: 'DELETE' });
-    toast.success('User deleted successfully');
+    toast.success(t('users.user_deleted'));
     await refresh();
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } };
-    toast.error(err.data?.message || 'Failed to delete user');
+    toast.error(err.data?.message || t('errors.generic'));
   }
 }
 
 function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale.value, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -168,15 +169,15 @@ function formatDate(date: string): string {
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900">
-          Users
+          {{ t('users.title') }}
         </h1>
         <p class="mt-1 text-sm text-gray-500">
-          Manage user accounts and access levels.
+          {{ t('users.description') }}
         </p>
       </div>
       <UiButton @click="openCreateModal">
-        <Icon name="lucide:plus" class="w-4 h-4 mr-2" />
-        Add User
+        <Icon name="lucide:plus" class="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+        {{ t('users.add_user') }}
       </UiButton>
     </div>
 
@@ -188,22 +189,22 @@ function formatDate(date: string): string {
               <th
                 class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
               >
-                User
+                {{ t('users.user_name') }}
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
               >
-                Role
+                {{ t('users.role') }}
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
               >
-                Status
+                {{ t('users.status') }}
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
               >
-                Created
+                {{ t('users.created') }}
               </th>
               <th class="px-4 py-3 text-right"></th>
             </tr>
@@ -220,8 +221,8 @@ function formatDate(date: string): string {
                     {{ user.name }}
                     <span
                       v-if="user.id === currentUser?.id"
-                      class="text-xs text-gray-400 ml-1"
-                      >(you)</span
+                      class="text-xs text-gray-400 ltr:ml-1 rtl:mr-1"
+                      >({{ t('users.you') }})</span
                     >
                   </p>
                   <p class="text-xs text-gray-500">{{ user.email }}</p>
@@ -238,10 +239,10 @@ function formatDate(date: string): string {
                 >
                   {{
                     user.role === 'admin'
-                      ? 'Administrator'
+                      ? t('users.role_admin')
                       : user.role === 'member'
-                      ? 'Member'
-                      : 'Viewer'
+                      ? t('users.role_member')
+                      : t('users.role_viewer')
                   }}
                 </span>
               </td>
@@ -254,7 +255,7 @@ function formatDate(date: string): string {
                       : 'bg-red-100 text-red-700'
                   "
                 >
-                  {{ user.isActive ? 'Active' : 'Inactive' }}
+                  {{ user.isActive ? t('users.active') : t('users.inactive') }}
                 </span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-500">
@@ -287,17 +288,17 @@ function formatDate(date: string): string {
       <UiEmptyState
         v-if="users?.length === 0"
         icon="lucide:users"
-        title="No users yet"
-        description="Create your first user to get started."
+        :title="t('users.no_users')"
+        :description="t('users.no_users_description')"
       />
     </div>
 
     <!-- Create User Modal -->
-    <UiModal v-model:open="showModal" title="Add New User">
+    <UiModal v-model:open="showModal" :title="t('users.add_user')">
       <form @submit.prevent="createUser" class="space-y-4">
         <UiInput
           v-model="form.name"
-          label="Full Name"
+          :label="t('users.full_name')"
           placeholder="John Doe"
           :disabled="isSubmitting"
         />
@@ -305,7 +306,7 @@ function formatDate(date: string): string {
         <UiInput
           v-model="form.email"
           type="email"
-          label="Email Address"
+          :label="t('users.email_address')"
           placeholder="user@company.com"
           :disabled="isSubmitting"
         />
@@ -313,25 +314,25 @@ function formatDate(date: string): string {
         <UiInput
           v-model="form.password"
           type="password"
-          label="Password"
-          placeholder="Minimum 8 characters"
+          :label="t('users.password')"
+          :placeholder="t('users.password_placeholder')"
           :disabled="isSubmitting"
         />
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1.5">
-            Role
+            {{ t('users.role') }}
           </label>
           <select
             v-model="form.role"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             :disabled="isSubmitting"
           >
-            <option value="member">Member (Full access)</option>
-            <option value="viewer">Viewer (Read-only)</option>
+            <option value="member">{{ t('users.role_member_desc') }}</option>
+            <option value="viewer">{{ t('users.role_viewer_desc') }}</option>
           </select>
           <p class="mt-1 text-xs text-gray-500">
-            Members can create and modify data. Viewers have read-only access.
+            {{ t('users.role_description') }}
           </p>
         </div>
 
@@ -342,21 +343,21 @@ function formatDate(date: string): string {
             @click="showModal = false"
             :disabled="isSubmitting"
           >
-            Cancel
+            {{ t('app.cancel') }}
           </UiButton>
           <UiButton type="submit" :loading="isSubmitting">
-            Create User
+            {{ t('users.create_user') }}
           </UiButton>
         </div>
       </form>
     </UiModal>
 
     <!-- Edit User Modal -->
-    <UiModal v-model:open="showEditModal" title="Edit User">
+    <UiModal v-model:open="showEditModal" :title="t('users.edit_user')">
       <form @submit.prevent="updateUser" class="space-y-4">
         <UiInput
           v-model="editForm.name"
-          label="Full Name"
+          :label="t('users.full_name')"
           placeholder="John Doe"
           :disabled="isSubmitting"
         />
@@ -364,7 +365,7 @@ function formatDate(date: string): string {
         <UiInput
           v-model="editForm.email"
           type="email"
-          label="Email Address"
+          :label="t('users.email_address')"
           placeholder="user@company.com"
           :disabled="isSubmitting"
         />
@@ -372,8 +373,8 @@ function formatDate(date: string): string {
         <UiInput
           v-model="editForm.password"
           type="password"
-          label="New Password (leave blank to keep current)"
-          placeholder="Minimum 8 characters"
+          :label="t('users.new_password')"
+          :placeholder="t('users.password_placeholder')"
           :disabled="isSubmitting"
         />
 
@@ -388,24 +389,24 @@ function formatDate(date: string): string {
             class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <label for="isActive" class="text-sm text-gray-700">
-            Account is active
+            {{ t('users.account_active') }}
           </label>
         </div>
 
         <div v-if="editingUser?.role !== 'admin'">
           <label class="block text-sm font-medium text-gray-700 mb-1.5">
-            Role
+            {{ t('users.role') }}
           </label>
           <select
             v-model="editForm.role"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             :disabled="isSubmitting"
           >
-            <option value="member">Member (Full access)</option>
-            <option value="viewer">Viewer (Read-only)</option>
+            <option value="member">{{ t('users.role_member_desc') }}</option>
+            <option value="viewer">{{ t('users.role_viewer_desc') }}</option>
           </select>
           <p class="mt-1 text-xs text-gray-500">
-            Members can create and modify data. Viewers have read-only access.
+            {{ t('users.role_description') }}
           </p>
         </div>
 
@@ -416,10 +417,10 @@ function formatDate(date: string): string {
             @click="showEditModal = false"
             :disabled="isSubmitting"
           >
-            Cancel
+            {{ t('app.cancel') }}
           </UiButton>
           <UiButton type="submit" :loading="isSubmitting">
-            Save Changes
+            {{ t('users.save_changes') }}
           </UiButton>
         </div>
       </form>

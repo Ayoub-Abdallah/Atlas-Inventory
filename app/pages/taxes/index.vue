@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Tax } from '~~/server/database/schema';
 
+const { t } = useI18n();
 const toast = useToast();
 
 // Fetch taxes
@@ -18,12 +19,12 @@ const form = reactive({
 });
 
 // Table columns
-const columns = [
-  { key: 'name', label: 'Tax Name' },
-  { key: 'rate', label: 'Rate', class: 'text-right' },
-  { key: 'default', label: 'Default' },
+const columns = computed(() => [
+  { key: 'name', label: t('taxes.tax_name') },
+  { key: 'rate', label: t('taxes.tax_rate'), class: 'text-right' },
+  { key: 'default', label: t('taxes.is_default') },
   { key: 'actions', label: '', class: 'w-20' },
-];
+]);
 
 function openCreateModal() {
   editingTax.value = null;
@@ -61,31 +62,31 @@ async function saveTax() {
         method: 'PUT',
         body: payload,
       });
-      toast.success('Tax updated');
+      toast.success(t('taxes.tax_updated'));
     } else {
       await $fetch('/api/taxes', {
         method: 'POST',
         body: payload,
       });
-      toast.success('Tax created');
+      toast.success(t('taxes.tax_created'));
     }
     isModalOpen.value = false;
     refresh();
   } catch (error) {
-    toast.error('Failed to save');
+    toast.error(t('errors.generic'));
     console.error('Failed to save tax:', error);
   }
 }
 
 async function deleteTax(id: string) {
-  if (!confirm('Delete this tax?')) return;
+  if (!confirm(t('taxes.confirm_delete'))) return;
 
   try {
     await $fetch(`/api/taxes/${id}`, { method: 'DELETE' });
-    toast.success('Tax deleted');
+    toast.success(t('taxes.tax_deleted'));
     refresh();
   } catch (error) {
-    toast.error('Failed to delete');
+    toast.error(t('errors.generic'));
     console.error('Failed to delete tax:', error);
   }
 }
@@ -96,12 +97,12 @@ async function deleteTax(id: string) {
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-semibold text-gray-900">Taxes</h1>
-        <p class="text-xs text-gray-500">Configure tax rates</p>
+        <h1 class="text-lg font-semibold text-gray-900">{{ t('taxes.title') }}</h1>
+        <p class="text-xs text-gray-500">{{ t('taxes.description') }}</p>
       </div>
       <button class="btn-primary" @click="openCreateModal">
         <Icon name="lucide:plus" class="h-3.5 w-3.5" />
-        Add
+        {{ t('app.add') }}
       </button>
     </div>
 
@@ -111,8 +112,8 @@ async function deleteTax(id: string) {
         :columns="columns"
         :data="taxes || []"
         :loading="pending"
-        empty-title="No taxes"
-        empty-description="Add tax rates to apply to products."
+        :empty-title="t('taxes.no_taxes')"
+        :empty-description="t('taxes.no_taxes_description')"
       >
         <template #name="{ item }">
           <p class="text-xs font-medium text-gray-900">{{ item.name }}</p>
@@ -126,7 +127,7 @@ async function deleteTax(id: string) {
 
         <template #default="{ item }">
           <span v-if="item.isDefault" class="badge badge-success">
-            Default
+            {{ t('taxes.is_default') }}
           </span>
           <span v-else class="text-gray-400">—</span>
         </template>
@@ -157,16 +158,16 @@ async function deleteTax(id: string) {
     <!-- Create/Edit Modal -->
     <UiModal
       v-model:open="isModalOpen"
-      :title="editingTax ? 'Edit Tax' : 'Add Tax'"
+      :title="editingTax ? t('taxes.edit_tax') : t('taxes.add_tax')"
     >
       <form id="tax-form" class="space-y-4" @submit.prevent="saveTax">
         <div>
-          <label class="label">Name <span class="text-red-500">*</span></label>
-          <UiInput v-model="form.name" placeholder="e.g., VAT 20%" autofocus />
+          <label class="label">{{ t('taxes.tax_name') }} <span class="text-red-500">*</span></label>
+          <UiInput v-model="form.name" :placeholder="t('taxes.tax_name')" autofocus />
         </div>
 
         <div>
-          <label class="label">Rate (%)</label>
+          <label class="label">{{ t('taxes.tax_rate') }}</label>
           <UiInput
             v-model.number="form.rate"
             type="number"
@@ -183,9 +184,7 @@ async function deleteTax(id: string) {
             type="checkbox"
             class="h-4 w-4 rounded border-gray-300"
           />
-          <label for="isDefault" class="text-xs text-gray-600"
-            >Set as default</label
-          >
+          <label for="isDefault" class="text-xs text-gray-600">{{ t('taxes.is_default') }}</label>
         </div>
       </form>
 
@@ -195,10 +194,10 @@ async function deleteTax(id: string) {
           class="btn-secondary"
           @click="isModalOpen = false"
         >
-          Cancel
+          {{ t('app.cancel') }}
         </button>
         <button type="submit" form="tax-form" class="btn-primary">
-          {{ editingTax ? 'Update' : 'Create' }}
+          {{ editingTax ? t('app.save') : t('app.create') }}
         </button>
       </template>
     </UiModal>

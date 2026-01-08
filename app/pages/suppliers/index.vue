@@ -252,7 +252,7 @@ const activeSuppliers = computed(
 
     <UiModal
       v-model:open="isModalOpen"
-      :title="editingSupplier ? 'Edit Supplier' : 'New Supplier'"
+      :title="editingSupplier ? t('suppliers.edit_supplier_title') : t('suppliers.new_supplier')"
       size="lg"
     >
       <form id="supplier-form" class="space-y-4" @submit.prevent="saveSupplier">
@@ -261,15 +261,15 @@ const activeSuppliers = computed(
             class="mb-3 flex items-center gap-1.5 text-xs font-medium text-gray-700 uppercase tracking-wide"
           >
             <Icon name="lucide:building-2" class="h-3.5 w-3.5" />
-            Basic Info
+            {{ t('suppliers.basic_info') }}
           </h3>
           <div>
             <label class="label"
-              >Name <span class="text-red-500">*</span></label
+              >{{ t('common.name') }} <span class="text-red-500">*</span></label
             >
             <UiInput
               v-model="form.name"
-              placeholder="Supplier name"
+              :placeholder="t('suppliers.supplier_name')"
               autofocus
             />
           </div>
@@ -280,11 +280,11 @@ const activeSuppliers = computed(
             class="mb-3 flex items-center gap-1.5 text-xs font-medium text-gray-700 uppercase tracking-wide"
           >
             <Icon name="lucide:contact" class="h-3.5 w-3.5" />
-            Contact
+            {{ t('suppliers.contact_info') }}
           </h3>
           <div class="grid gap-3 sm:grid-cols-2">
             <div>
-              <label class="label">Email</label>
+              <label class="label">{{ t('suppliers.email') }}</label>
               <UiInput
                 v-model="form.email"
                 type="email"
@@ -292,7 +292,7 @@ const activeSuppliers = computed(
               />
             </div>
             <div>
-              <label class="label">Phone</label>
+              <label class="label">{{ t('suppliers.phone') }}</label>
               <UiInput v-model="form.phone" placeholder="+33 1 23 45 67 89" />
             </div>
           </div>
@@ -303,36 +303,36 @@ const activeSuppliers = computed(
             class="mb-3 flex items-center gap-1.5 text-xs font-medium text-gray-700 uppercase tracking-wide"
           >
             <Icon name="lucide:map-pin" class="h-3.5 w-3.5" />
-            Address
+            {{ t('suppliers.address_info') }}
           </h3>
           <div class="space-y-3">
             <div>
-              <label class="label">Street</label>
-              <UiInput v-model="form.address" placeholder="123 Main Street" />
+              <label class="label">{{ t('suppliers.street') }}</label>
+              <UiInput v-model="form.address" :placeholder="t('suppliers.street_placeholder')" />
             </div>
             <div class="grid gap-3 sm:grid-cols-3">
               <div>
-                <label class="label">City</label>
-                <UiInput v-model="form.city" placeholder="Paris" />
+                <label class="label">{{ t('suppliers.city') }}</label>
+                <UiInput v-model="form.city" :placeholder="t('suppliers.city')" />
               </div>
               <div>
-                <label class="label">Postal Code</label>
-                <UiInput v-model="form.postalCode" placeholder="75001" />
+                <label class="label">{{ t('suppliers.postal_code') }}</label>
+                <UiInput v-model="form.postalCode" :placeholder="t('suppliers.postal_code')" />
               </div>
               <div>
-                <label class="label">Country</label>
-                <UiInput v-model="form.country" placeholder="France" />
+                <label class="label">{{ t('suppliers.country') }}</label>
+                <UiInput v-model="form.country" :placeholder="t('suppliers.country')" />
               </div>
             </div>
           </div>
         </div>
 
         <div>
-          <label class="label">Notes</label>
+          <label class="label">{{ t('suppliers.notes') }}</label>
           <textarea
             v-model="form.notes"
             class="input min-h-[60px] resize-none"
-            placeholder="Additional notes..."
+            :placeholder="t('suppliers.notes_placeholder')"
           />
         </div>
       </form>
@@ -344,7 +344,7 @@ const activeSuppliers = computed(
           :disabled="isSubmitting"
           @click="isModalOpen = false"
         >
-          Cancel
+          {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
@@ -357,7 +357,7 @@ const activeSuppliers = computed(
             name="lucide:loader-2"
             class="h-3.5 w-3.5 animate-spin"
           />
-          {{ editingSupplier ? 'Update' : 'Add' }}
+          {{ editingSupplier ? t('common.update') : t('common.add') }}
         </button>
       </template>
     </UiModal>

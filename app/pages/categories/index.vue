@@ -157,7 +157,7 @@ const topLevelCategories = computed(
         <Icon name="lucide:folder" class="h-3.5 w-3.5 text-gray-400" />
         <span class="text-xs">
           <span class="font-medium font-mono">{{ totalCategories }}</span>
-          <span class="text-gray-500"> total</span>
+          <span class="text-gray-500"> {{ t('categories.total') }}</span>
         </span>
       </div>
       <div
@@ -166,7 +166,7 @@ const topLevelCategories = computed(
         <Icon name="lucide:folder-tree" class="h-3.5 w-3.5 text-gray-400" />
         <span class="text-xs">
           <span class="font-medium font-mono">{{ topLevelCategories }}</span>
-          <span class="text-gray-500"> top level</span>
+          <span class="text-gray-500"> {{ t('categories.top_level') }}</span>
         </span>
       </div>
     </div>
@@ -248,32 +248,32 @@ const topLevelCategories = computed(
     <!-- Create/Edit Modal -->
     <UiModal
       v-model:open="isModalOpen"
-      :title="editingCategory ? 'Edit Category' : 'New Category'"
+      :title="editingCategory ? t('categories.edit_category_title') : t('categories.new_category')"
       size="md"
     >
       <form id="category-form" class="space-y-4" @submit.prevent="saveCategory">
         <div>
-          <label class="label">Name <span class="text-red-500">*</span></label>
+          <label class="label">{{ t('common.name') }} <span class="text-red-500">*</span></label>
           <UiInput
             v-model="form.name"
-            placeholder="e.g., Electronics"
+            :placeholder="t('categories.name_placeholder')"
             autofocus
           />
         </div>
 
         <div>
-          <label class="label">Description</label>
+          <label class="label">{{ t('common.description') }}</label>
           <textarea
             v-model="form.description"
             class="input min-h-[80px] resize-none"
-            placeholder="Brief description..."
+            :placeholder="t('categories.description_placeholder')"
           />
         </div>
 
         <div>
-          <label class="label">Parent Category</label>
+          <label class="label">{{ t('categories.parent_category') }}</label>
           <select v-model="form.parentId" class="input">
-            <option value="">None (top level)</option>
+            <option value="">{{ t('categories.none_top_level') }}</option>
             <option v-for="cat in parentOptions" :key="cat.id" :value="cat.id">
               {{ cat.name }}
             </option>
@@ -281,7 +281,7 @@ const topLevelCategories = computed(
         </div>
 
         <div>
-          <label class="label">Color</label>
+          <label class="label">{{ t('categories.color') }}</label>
           <div class="flex flex-wrap gap-1.5">
             <button
               v-for="color in presetColors"
@@ -314,7 +314,7 @@ const topLevelCategories = computed(
           :disabled="isSubmitting"
           @click="isModalOpen = false"
         >
-          Cancel
+          {{ t('common.cancel') }}
         </button>
         <button 
           type="submit" 
@@ -327,7 +327,7 @@ const topLevelCategories = computed(
             name="lucide:loader-2"
             class="h-3.5 w-3.5 animate-spin"
           />
-          {{ editingCategory ? 'Update' : 'Create' }}
+          {{ editingCategory ? t('common.update') : t('common.create') }}
         </button>
       </template>
     </UiModal>
