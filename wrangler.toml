@@ -12,9 +12,9 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "atlas-inventory-db"
-database_id = "YOUR_D1_DATABASE_ID_HERE"  # Replace after creating: npx wrangler d1 create atlas-inventory-db
+database_id = "5e4b4d66-726b-48f6-8ee7-796fe6abfae6"
 
 # KV for caching and sessions
 [[kv_namespaces]]
 binding = "KV"
-id = "YOUR_KV_NAMESPACE_ID_HERE"  # Replace after creating: npx wrangler kv:namespace create atlas_inventory_kv
+id = "eaa5b2a56c454c30a750527add58ece8"
