@@ -1,320 +1,287 @@
-export default defineEventHandler(async (event) => {
-  // Protect migration endpoint with a secret key
-  // Only allow in development OR with valid MIGRATE_SECRET header
-  const isDev = process.dev;
-  const migrateSecret = process.env.NUXT_MIGRATE_SECRET;
-  const providedSecret = getHeader(event, 'x-migrate-secret');
-
-  if (!isDev) {
-    if (!migrateSecret) {
-      throw createError({
-        statusCode: 503,
-        message:
-          'Migration endpoint not configured. Set NUXT_MIGRATE_SECRET environment variable.',
-      });
-    }
-    if (providedSecret !== migrateSecret) {
-      throw createError({
-        statusCode: 401,
-        message: 'Invalid or missing migration secret',
-      });
-    }
-  }
-
+// Migration endpoint to create database tables
+export default defineEventHandler(async () => {
   const db = hubDatabase();
-
-  const createStatements = [
-    `CREATE TABLE IF NOT EXISTS users (
-      id text PRIMARY KEY NOT NULL,
-      email text NOT NULL UNIQUE,
-      password_hash text NOT NULL,
-      name text NOT NULL,
-      role text NOT NULL DEFAULT 'member',
-      is_active integer DEFAULT 1,
-      created_at integer,
-      updated_at integer
-    )`,
+  
+  // Create all tables
+  const migrations = [
+    // Taxes
     `CREATE TABLE IF NOT EXISTS taxes (
-      id text PRIMARY KEY NOT NULL,
-      name text NOT NULL,
-      rate real NOT NULL,
-      is_default integer DEFAULT 0,
-      created_at integer,
-      updated_at integer
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      rate REAL NOT NULL,
+      is_default INTEGER DEFAULT 0,
+      created_at INTEGER,
+      updated_at INTEGER
     )`,
-    `CREATE TABLE IF NOT EXISTS suppliers (
-      id text PRIMARY KEY NOT NULL,
-      name text NOT NULL,
-      email text,
-      phone text,
-      address text,
-      city text,
-      postal_code text,
-      country text DEFAULT 'France',
-      notes text,
-      is_active integer DEFAULT 1,
-      created_at integer,
-      updated_at integer
-    )`,
+    
+    // Categories
     `CREATE TABLE IF NOT EXISTS categories (
-      id text PRIMARY KEY NOT NULL,
-      name text NOT NULL,
-      description text,
-      parent_id text,
-      color text DEFAULT '#6B7280',
-      created_at integer,
-      updated_at integer,
-      FOREIGN KEY (parent_id) REFERENCES categories(id) ON UPDATE no action ON DELETE no action
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      parent_id TEXT,
+      color TEXT DEFAULT '#6B7280',
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (parent_id) REFERENCES categories(id)
     )`,
+    
+    // Suppliers
+    `CREATE TABLE IF NOT EXISTS suppliers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      address TEXT,
+      city TEXT,
+      postal_code TEXT,
+      country TEXT DEFAULT 'France',
+      notes TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at INTEGER,
+      updated_at INTEGER
+    )`,
+    
+    // Users
+    `CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'member',
+      is_active INTEGER DEFAULT 1,
+      created_at INTEGER,
+      updated_at INTEGER
+    )`,
+    
+    // Products
     `CREATE TABLE IF NOT EXISTS products (
-      id text PRIMARY KEY NOT NULL,
-      sku text,
-      barcode text,
-      name text NOT NULL,
-      description text,
-      category_id text,
-      cost_price real DEFAULT 0,
-      selling_price real DEFAULT 0,
-      margin_percent real DEFAULT 30,
-      tax_id text,
-      stock_quantity integer DEFAULT 0,
-      stock_min integer DEFAULT 0,
-      stock_max integer,
-      unit text DEFAULT 'unit',
-      supplier_id text,
-      is_active integer DEFAULT 1,
-      options text,
-      created_at integer,
-      updated_at integer,
-      FOREIGN KEY (category_id) REFERENCES categories(id) ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY (tax_id) REFERENCES taxes(id) ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON UPDATE no action ON DELETE no action
+      id TEXT PRIMARY KEY,
+      sku TEXT UNIQUE,
+      barcode TEXT,
+      name TEXT NOT NULL,
+      description TEXT,
+      category_id TEXT,
+      cost_price REAL DEFAULT 0,
+      selling_price REAL DEFAULT 0,
+      margin_percent REAL DEFAULT 30,
+      tax_id TEXT,
+      stock_quantity INTEGER DEFAULT 0,
+      stock_min INTEGER DEFAULT 0,
+      stock_max INTEGER,
+      unit TEXT DEFAULT 'unit',
+      supplier_id TEXT,
+      is_active INTEGER DEFAULT 1,
+      options TEXT,
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (category_id) REFERENCES categories(id),
+      FOREIGN KEY (tax_id) REFERENCES taxes(id),
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
     )`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS products_sku_unique ON products (sku)`,
+    
+    // Product Variants
     `CREATE TABLE IF NOT EXISTS product_variants (
-      id text PRIMARY KEY NOT NULL,
-      product_id text NOT NULL,
-      name text NOT NULL,
-      sku text,
-      barcode text,
-      cost_price real DEFAULT 0,
-      margin_percent real DEFAULT 30,
-      price real DEFAULT 0,
-      tax_id text,
-      stock_quantity integer DEFAULT 0,
-      stock_min integer DEFAULT 0,
-      stock_max integer,
-      supplier_id text,
-      created_at integer,
-      updated_at integer,
-      FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE cascade,
-      FOREIGN KEY (tax_id) REFERENCES taxes(id) ON UPDATE no action ON DELETE no action,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON UPDATE no action ON DELETE no action
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      sku TEXT,
+      barcode TEXT,
+      cost_price REAL DEFAULT 0 NOT NULL,
+      margin_percent REAL DEFAULT 30,
+      price REAL DEFAULT 0 NOT NULL,
+      tax_id TEXT,
+      stock_quantity INTEGER DEFAULT 0,
+      stock_min INTEGER DEFAULT 0,
+      stock_max INTEGER,
+      supplier_id TEXT,
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (tax_id) REFERENCES taxes(id),
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
     )`,
-    `CREATE TABLE IF NOT EXISTS stock_movements (
-      id text PRIMARY KEY NOT NULL,
-      product_id text NOT NULL,
-      variant_id text,
-      type text NOT NULL,
-      quantity integer NOT NULL,
-      stock_before integer NOT NULL,
-      stock_after integer NOT NULL,
-      unit_cost real,
-      reference text,
-      reason text,
-      supplier_id text,
-      created_at integer,
-      FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE cascade,
-      FOREIGN KEY (variant_id) REFERENCES product_variants(id),
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON UPDATE no action ON DELETE no action
-    )`,
+    
+    // Supplier Prices
     `CREATE TABLE IF NOT EXISTS supplier_prices (
-      id text PRIMARY KEY NOT NULL,
-      product_id text NOT NULL,
-      supplier_id text NOT NULL,
-      price real NOT NULL,
-      min_quantity integer DEFAULT 1,
-      lead_time_days integer,
-      supplier_sku text,
-      purchase_url text,
-      is_preferred integer DEFAULT 0,
-      created_at integer,
-      updated_at integer,
-      FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE cascade,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON UPDATE no action ON DELETE cascade
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      supplier_id TEXT NOT NULL,
+      price REAL NOT NULL,
+      min_quantity INTEGER DEFAULT 1,
+      lead_time_days INTEGER,
+      supplier_sku TEXT,
+      purchase_url TEXT,
+      is_preferred INTEGER DEFAULT 0,
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
     )`,
+    
+    // Supplier Price History
     `CREATE TABLE IF NOT EXISTS supplier_price_history (
-      id text PRIMARY KEY NOT NULL,
-      supplier_price_id text NOT NULL,
-      price real NOT NULL,
-      created_at integer,
-      created_by text,
-      FOREIGN KEY (supplier_price_id) REFERENCES supplier_prices(id) ON UPDATE no action ON DELETE cascade
+      id TEXT PRIMARY KEY,
+      supplier_price_id TEXT NOT NULL,
+      price REAL NOT NULL,
+      created_at INTEGER,
+      created_by TEXT,
+      FOREIGN KEY (supplier_price_id) REFERENCES supplier_prices(id) ON DELETE CASCADE
     )`,
-    `CREATE TABLE IF NOT EXISTS selling_price_history (
-      id text PRIMARY KEY NOT NULL,
-      product_id text NOT NULL,
-      variant_id text,
-      price real NOT NULL,
-      created_at integer,
-      created_by text,
-      FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE no action ON DELETE cascade,
-      FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON UPDATE no action ON DELETE cascade
-    )`,
+    
+    // Variant Supplier Exclusions
     `CREATE TABLE IF NOT EXISTS variant_supplier_exclusions (
-      id text PRIMARY KEY NOT NULL,
-      variant_id text NOT NULL,
-      supplier_price_id text NOT NULL,
-      created_at integer,
-      FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON UPDATE no action ON DELETE cascade,
-      FOREIGN KEY (supplier_price_id) REFERENCES supplier_prices(id) ON UPDATE no action ON DELETE cascade
+      id TEXT PRIMARY KEY,
+      variant_id TEXT NOT NULL,
+      supplier_price_id TEXT NOT NULL,
+      created_at INTEGER,
+      FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+      FOREIGN KEY (supplier_price_id) REFERENCES supplier_prices(id) ON DELETE CASCADE
     )`,
-    `CREATE TABLE IF NOT EXISTS settings (
-      id integer PRIMARY KEY NOT NULL,
-      business_name text DEFAULT 'Atlas Inventory',
-      currency text DEFAULT 'EUR',
-      language text DEFAULT 'fr',
-      theme text DEFAULT 'default',
-      default_margin real DEFAULT 30,
-      low_stock_alert integer DEFAULT 1,
-      out_of_stock_alert integer DEFAULT 1,
-      email_daily_report integer DEFAULT 0,
-      invoice_template text,
-      invoice_prefix text DEFAULT 'INV-',
-      invoice_next_number integer DEFAULT 1,
-      updated_at integer
+    
+    // Selling Price History
+    `CREATE TABLE IF NOT EXISTS selling_price_history (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      variant_id TEXT,
+      price REAL NOT NULL,
+      created_at INTEGER,
+      created_by TEXT,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
     )`,
+    
+    // Stock Movements
+    `CREATE TABLE IF NOT EXISTS stock_movements (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      variant_id TEXT,
+      type TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      stock_before INTEGER NOT NULL,
+      stock_after INTEGER NOT NULL,
+      unit_cost REAL,
+      reference TEXT,
+      reason TEXT,
+      supplier_id TEXT,
+      sale_id TEXT,
+      created_at INTEGER,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (variant_id) REFERENCES product_variants(id),
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    )`,
+    
+    // Sales
     `CREATE TABLE IF NOT EXISTS sales (
-      id text PRIMARY KEY NOT NULL,
-      invoice_number text,
-      supplier_id text,
-      user_id text,
-      status text NOT NULL DEFAULT 'draft',
-      total_amount real NOT NULL DEFAULT 0,
-      total_cost real DEFAULT 0,
-      tax_amount real DEFAULT 0,
-      client_name text,
-      client_info text,
-      notes text,
-      metadata text,
-      confirmed_at integer,
-      created_at integer,
-      updated_at integer,
+      id TEXT PRIMARY KEY,
+      invoice_number TEXT,
+      supplier_id TEXT,
+      user_id TEXT,
+      status TEXT NOT NULL DEFAULT 'draft',
+      total_amount REAL NOT NULL DEFAULT 0,
+      total_cost REAL DEFAULT 0,
+      tax_amount REAL DEFAULT 0,
+      client_name TEXT,
+      client_info TEXT,
+      notes TEXT,
+      metadata TEXT,
+      confirmed_at INTEGER,
+      created_at INTEGER,
+      updated_at INTEGER,
       FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
+    
+    // Sale Items
     `CREATE TABLE IF NOT EXISTS sale_items (
-      id text PRIMARY KEY NOT NULL,
-      sale_id text NOT NULL,
-      product_id text NOT NULL,
-      variant_id text,
-      quantity integer NOT NULL,
-      unit_price real NOT NULL,
-      unit_cost real DEFAULT 0,
-      tax_rate real DEFAULT 0,
-      line_total real NOT NULL,
-      created_at integer,
-      FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE cascade,
+      id TEXT PRIMARY KEY,
+      sale_id TEXT NOT NULL,
+      product_id TEXT NOT NULL,
+      variant_id TEXT,
+      quantity INTEGER NOT NULL,
+      unit_price REAL NOT NULL,
+      unit_cost REAL DEFAULT 0,
+      tax_rate REAL DEFAULT 0,
+      line_total REAL NOT NULL,
+      created_at INTEGER,
+      FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
       FOREIGN KEY (product_id) REFERENCES products(id),
       FOREIGN KEY (variant_id) REFERENCES product_variants(id)
     )`,
-    `CREATE INDEX IF NOT EXISTS idx_sales_status ON sales(status)`,
-    `CREATE INDEX IF NOT EXISTS idx_sales_created_at ON sales(created_at)`,
-    `CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)`,
-    `CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)`,
-    // Zakat Settings - singleton configuration table
+    
+    // Settings
+    `CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY,
+      business_name TEXT DEFAULT 'Atlas Inventory',
+      currency TEXT DEFAULT 'EUR',
+      language TEXT DEFAULT 'fr',
+      theme TEXT DEFAULT 'default',
+      default_margin REAL DEFAULT 30,
+      low_stock_alert INTEGER DEFAULT 1,
+      out_of_stock_alert INTEGER DEFAULT 1,
+      email_daily_report INTEGER DEFAULT 0,
+      invoice_template TEXT,
+      invoice_prefix TEXT DEFAULT 'INV-',
+      invoice_next_number INTEGER DEFAULT 1,
+      updated_at INTEGER
+    )`,
+    
+    // Zakat Settings
     `CREATE TABLE IF NOT EXISTS zakat_settings (
-      id integer PRIMARY KEY NOT NULL,
-      nisab_gold_grams real DEFAULT 85,
-      gold_price_per_gram real DEFAULT 0,
-      nisab_value real DEFAULT 0,
-      currency text DEFAULT 'DZD',
-      zakat_rate real DEFAULT 2.5,
-      cash_balance real DEFAULT 0,
-      receivables real DEFAULT 0,
-      other_assets real DEFAULT 0,
-      short_term_liabilities real DEFAULT 0,
-      hawl_start_date integer,
-      last_calculated_at integer,
-      updated_at integer
+      id INTEGER PRIMARY KEY,
+      nisab_gold_grams REAL DEFAULT 85,
+      gold_price_per_gram REAL DEFAULT 0,
+      nisab_value REAL DEFAULT 0,
+      currency TEXT DEFAULT 'DZD',
+      zakat_rate REAL DEFAULT 2.5,
+      cash_balance REAL DEFAULT 0,
+      receivables REAL DEFAULT 0,
+      other_assets REAL DEFAULT 0,
+      short_term_liabilities REAL DEFAULT 0,
+      hawl_start_date INTEGER,
+      last_calculated_at INTEGER,
+      updated_at INTEGER
     )`,
-    // Zakat History - records of calculations and payments
+    
+    // Zakat History
     `CREATE TABLE IF NOT EXISTS zakat_history (
-      id text PRIMARY KEY NOT NULL,
-      zakat_date integer NOT NULL,
-      inventory_value real DEFAULT 0,
-      cash_balance real DEFAULT 0,
-      receivables real DEFAULT 0,
-      other_assets real DEFAULT 0,
-      total_assets real NOT NULL,
-      short_term_liabilities real DEFAULT 0,
-      net_zakatable_assets real NOT NULL,
-      nisab_at_time real NOT NULL,
-      meets_nisab integer DEFAULT 0,
-      zakat_amount real NOT NULL,
-      zakat_rate real DEFAULT 2.5,
-      is_paid integer DEFAULT 0,
-      paid_at integer,
-      paid_amount real,
-      payment_method text,
-      payment_reference text,
-      notes text,
-      currency text DEFAULT 'DZD',
-      created_at integer,
-      updated_at integer
+      id TEXT PRIMARY KEY,
+      zakat_date INTEGER NOT NULL,
+      inventory_value REAL DEFAULT 0,
+      cash_balance REAL DEFAULT 0,
+      receivables REAL DEFAULT 0,
+      other_assets REAL DEFAULT 0,
+      total_assets REAL NOT NULL,
+      short_term_liabilities REAL DEFAULT 0,
+      net_zakatable_assets REAL NOT NULL,
+      nisab_at_time REAL NOT NULL,
+      meets_nisab INTEGER DEFAULT 0,
+      zakat_amount REAL NOT NULL,
+      zakat_rate REAL DEFAULT 2.5,
+      is_paid INTEGER DEFAULT 0,
+      paid_at INTEGER,
+      paid_amount REAL,
+      payment_method TEXT,
+      payment_reference TEXT,
+      notes TEXT,
+      currency TEXT DEFAULT 'DZD',
+      created_at INTEGER,
+      updated_at INTEGER
     )`,
-    `CREATE INDEX IF NOT EXISTS idx_zakat_history_date ON zakat_history(zakat_date)`,
-    `CREATE INDEX IF NOT EXISTS idx_zakat_history_is_paid ON zakat_history(is_paid)`,
   ];
-
-  const alterStatements = [
-    `ALTER TABLE product_variants ADD COLUMN barcode text`,
-    `ALTER TABLE product_variants ADD COLUMN margin_percent real DEFAULT 30`,
-    `ALTER TABLE product_variants ADD COLUMN tax_id text REFERENCES taxes(id)`,
-    `ALTER TABLE product_variants ADD COLUMN stock_max integer`,
-    `ALTER TABLE product_variants ADD COLUMN supplier_id text REFERENCES suppliers(id)`,
-    `ALTER TABLE supplier_prices ADD COLUMN purchase_url text`,
-    `ALTER TABLE stock_movements ADD COLUMN sale_id text REFERENCES sales(id)`,
-    `ALTER TABLE settings ADD COLUMN language text DEFAULT 'fr'`,
-    `ALTER TABLE settings ADD COLUMN theme text DEFAULT 'default'`,
-    `ALTER TABLE settings ADD COLUMN invoice_template text`,
-    `ALTER TABLE settings ADD COLUMN invoice_prefix text DEFAULT 'INV-'`,
-    `ALTER TABLE settings ADD COLUMN invoice_next_number integer DEFAULT 1`,
-    `ALTER TABLE sales ADD COLUMN invoice_number text`,
-    `ALTER TABLE sales ADD COLUMN client_name text`,
-    `ALTER TABLE sales ADD COLUMN client_info text`,
-    `ALTER TABLE sales ADD COLUMN confirmed_at integer`,
-  ];
-
-  const results: string[] = [];
-
-  try {
-    for (const sql of createStatements) {
-      await db.prepare(sql).run();
-    }
-    results.push('Tables created successfully');
-
-    for (const sql of alterStatements) {
-      try {
-        await db.prepare(sql).run();
-        results.push(`Applied: ${sql.substring(0, 60)}...`);
-      } catch (error) {
-        const errorMessage = String(error);
-        if (errorMessage.includes('duplicate column name')) {
-          results.push(`Skipped (already exists): ${sql.substring(0, 60)}...`);
-        } else {
-          throw error;
-        }
-      }
-    }
-
-    return {
-      success: true,
-      message: 'Migrations applied successfully',
-      results,
-    };
-  } catch (error) {
-    return { success: false, error: String(error), results };
+  
+  // Run each migration
+  for (const sql of migrations) {
+    await db.prepare(sql).run();
   }
+  
+  // Insert default settings
+  await db.prepare(`INSERT OR IGNORE INTO settings (id) VALUES (1)`).run();
+  await db.prepare(`INSERT OR IGNORE INTO zakat_settings (id) VALUES (1)`).run();
+  
+  return {
+    success: true,
+    message: 'Database migrations completed successfully',
+    tables: migrations.length,
+  };
 });

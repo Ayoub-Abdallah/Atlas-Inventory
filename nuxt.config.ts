@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: [
-    '@nuxthub/core',
+    '@nuxthub/core', // Uses local SQLite in development
     '@nuxt/fonts',
     '@nuxt/icon',
     '@nuxtjs/tailwindcss',
@@ -29,6 +29,9 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/branding/favicon-32.png' },
         { rel: 'apple-touch-icon', href: '/branding/apple-touch-icon.png' },
         { rel: 'manifest', href: '/manifest.json' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap' },
       ],
       // Inline script to set direction immediately based on cookie (prevents flicker)
       script: [
@@ -40,9 +43,10 @@ export default defineNuxtConfig({
     },
   },
 
+  // NuxtHub uses local SQLite in development mode
   hub: {
     database: true,
-    kv: true,
+    // kv: true, // Disabled - not needed
   },
 
   // Session configuration for network access

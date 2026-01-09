@@ -733,6 +733,11 @@
     "record_deleted": "تم حذف سجل الزكاة بنجاح",
     "breakdown": "تفصيل الأصول",
     "cash": "نقدي",
+    "not_set": "غير محدد",
+    "payment_cash": "نقداً",
+    "payment_bank": "تحويل بنكي",
+    "payment_charity": "منظمة خيرية",
+    "payment_other": "أخرى",
     "methods": {
       "cash": "نقداً",
       "bank_transfer": "تحويل بنكي",

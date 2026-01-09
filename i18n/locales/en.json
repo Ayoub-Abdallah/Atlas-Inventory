@@ -735,6 +735,11 @@
     "record_deleted": "Zakat record deleted successfully",
     "breakdown": "Asset Breakdown",
     "cash": "Cash",
+    "not_set": "Not set",
+    "payment_cash": "Cash",
+    "payment_bank": "Bank Transfer",
+    "payment_charity": "Charity Organization",
+    "payment_other": "Other",
     "methods": {
       "cash": "Cash",
       "bank_transfer": "Bank Transfer",

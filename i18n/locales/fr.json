@@ -733,6 +733,11 @@
     "record_deleted": "Enregistrement de Zakat supprimé avec succès",
     "breakdown": "Répartition des actifs",
     "cash": "Espèces",
+    "not_set": "Non défini",
+    "payment_cash": "Espèces",
+    "payment_bank": "Virement bancaire",
+    "payment_charity": "Organisation caritative",
+    "payment_other": "Autre",
     "methods": {
       "cash": "Espèces",
       "bank_transfer": "Virement bancaire",

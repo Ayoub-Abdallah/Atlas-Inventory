@@ -67,10 +67,10 @@ async function handleSubmit() {
       <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8">
         <div class="text-center mb-8">
           <div
-            class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary-50 mb-4"
+            class="inline-flex items-center justify-center w-[180px] rounded-lg mb-[50px]"
           >
             <!-- <Icon name="lucide:package" class="w-6 h-6 text-primary-600" /> -->
-                <img src="/branding/Atlas inventory Logo.png" />
+            <img src="/branding/logo.png" />
           </div>
           <h1 class="text-2xl font-bold text-gray-900">Welcome to Atlas Inventory</h1>
           <p class="text-sm text-gray-500 mt-2">
