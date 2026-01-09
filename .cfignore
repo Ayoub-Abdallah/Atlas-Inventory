@@ -1,0 +1,3 @@
+# Don't use Cloudflare's automatic deploy command
+# This is a Pages project, not a Workers project
+# Deploy via Cloudflare Dashboard with automatic Git integration
