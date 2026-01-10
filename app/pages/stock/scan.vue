@@ -33,6 +33,10 @@ const clientInfo = ref('');
 const confirmedSale = ref<any>(null);
 const showReceiptModal = ref(false);
 
+// Variant selection modal state
+const showVariantModal = ref(false);
+const pendingProduct = ref<any>(null);
+
 // Stock operation mode
 type OperationMode = 'sale' | 'stock_in' | 'stock_out';
 const operationMode = ref<OperationMode>('sale');
@@ -140,14 +144,38 @@ function selectProduct(product: any, variant?: any) {
 // Handle product click - different behavior based on mode
 function handleProductClick(product: any, variant?: any) {
   if (operationMode.value === 'sale') {
-    // In sale mode, add directly to cart
-    quickAddToCart(product, variant);
-    searchResults.value = [];
-    searchQuery.value = '';
+    // In sale mode, check if product has variants but no variant selected
+    if (product.variants && product.variants.length > 0 && !variant) {
+      // Show variant selection modal
+      pendingProduct.value = product;
+      showVariantModal.value = true;
+      searchResults.value = [];
+      searchQuery.value = '';
+    } else {
+      // Add directly to cart
+      quickAddToCart(product, variant);
+      searchResults.value = [];
+      searchQuery.value = '';
+    }
   } else {
     // In stock mode, select for quantity input
     selectProduct(product, variant);
   }
+}
+
+// Handle variant selection from modal
+function selectVariantForSale(variant: any) {
+  if (pendingProduct.value) {
+    quickAddToCart(pendingProduct.value, variant);
+    showVariantModal.value = false;
+    pendingProduct.value = null;
+  }
+}
+
+// Close variant modal
+function closeVariantModal() {
+  showVariantModal.value = false;
+  pendingProduct.value = null;
 }
 
 // Clear selection
@@ -970,6 +998,53 @@ onMounted(() => {
             {{ t('app.print') }}
           </UiButton>
         </div>
+      </template>
+    </UiModal>
+
+    <!-- Variant Selection Modal -->
+    <UiModal
+      v-model:open="showVariantModal"
+      :title="t('products.select_variant')"
+      size="md"
+    >
+      <div v-if="pendingProduct" class="space-y-4">
+        <div class="text-center pb-4 border-b border-gray-100">
+          <h3 class="font-semibold text-lg text-gray-900">{{ pendingProduct.name }}</h3>
+          <p class="text-sm text-gray-500">{{ t('sales.select_variant_to_add') }}</p>
+        </div>
+        
+        <div class="grid gap-2">
+          <button
+            v-for="variant in pendingProduct.variants"
+            :key="variant.id"
+            @click="selectVariantForSale(variant)"
+            class="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all"
+            :class="{ 'opacity-50 cursor-not-allowed': (variant.stockQuantity || 0) <= 0 }"
+            :disabled="(variant.stockQuantity || 0) <= 0"
+          >
+            <div class="text-left">
+              <p class="font-medium text-gray-900">{{ variant.name }}</p>
+              <p class="text-sm text-gray-500">
+                {{ variant.sku || '-' }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-gray-900">{{ formatCurrency(variant.price || 0) }}</p>
+              <p
+                class="text-sm"
+                :class="(variant.stockQuantity || 0) <= 0 ? 'text-red-600' : 'text-gray-500'"
+              >
+                {{ t('products.stock') }}: {{ variant.stockQuantity || 0 }}
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="closeVariantModal">
+          {{ t('app.cancel') }}
+        </UiButton>
       </template>
     </UiModal>
   </div>

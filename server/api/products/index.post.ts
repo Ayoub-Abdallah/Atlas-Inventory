@@ -1,8 +1,11 @@
+import { syncProductStockFromVariants } from '../../utils/stock';
+
 export default defineEventHandler(async (event) => {
   const db = useDB();
   const body = await readBody(event);
 
   const id = generateId('prod');
+  const hasVariants = body.variants && Array.isArray(body.variants) && body.variants.length > 0;
 
   await db.insert(tables.products).values({
     id,
@@ -15,7 +18,8 @@ export default defineEventHandler(async (event) => {
     sellingPrice: body.sellingPrice ?? 0,
     marginPercent: body.marginPercent ?? 30,
     taxId: body.taxId || null,
-    stockQuantity: body.stockQuantity ?? 0,
+    // If has variants, set initial stock to 0 (will be synced from variants)
+    stockQuantity: hasVariants ? 0 : (body.stockQuantity ?? 0),
     stockMin: body.stockMin ?? 0,
     stockMax: body.stockMax || null,
     unit: body.unit || 'unit',
@@ -24,11 +28,7 @@ export default defineEventHandler(async (event) => {
     options: body.options || null,
   });
 
-  if (
-    body.variants &&
-    Array.isArray(body.variants) &&
-    body.variants.length > 0
-  ) {
+  if (hasVariants) {
     const variantsToInsert = body.variants.map((v: any) => ({
       id: generateId('var'),
       productId: id,
@@ -45,6 +45,9 @@ export default defineEventHandler(async (event) => {
       supplierId: v.supplierId || null,
     }));
     await db.insert(tables.productVariants).values(variantsToInsert);
+
+    // Sync parent product stock from variants
+    await syncProductStockFromVariants(db, id);
   }
 
   return { id };

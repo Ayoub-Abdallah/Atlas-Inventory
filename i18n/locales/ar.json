@@ -171,6 +171,7 @@
     "no_options": "لم تتم إضافة خيارات. انقر على \"إضافة خيار\" للبدء.",
     "generate_variants": "إنشاء المتغيرات",
     "variant": "متغير",
+    "select_variant": "اختر متغيرًا",
     "price": "السعر",
     "purchase_price": "سعر الشراء",
     "min_quantity": "الحد الأدنى للكمية",
@@ -412,6 +413,7 @@
     "confirm_and_print": "تأكيد وطباعة",
     "receipt": "إيصال",
     "thank_you": "شكراً لزيارتكم!",
+    "select_variant_to_add": "اختر متغيراً لإضافته إلى السلة",
     "client": "العميل"
   },
   "finance": {

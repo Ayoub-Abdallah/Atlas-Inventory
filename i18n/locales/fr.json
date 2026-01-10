@@ -171,6 +171,7 @@
     "no_options": "Aucune option ajoutée. Cliquez sur \"Ajouter une option\" pour commencer.",
     "generate_variants": "Générer les variantes",
     "variant": "Variante",
+    "select_variant": "Sélectionner une variante",
     "price": "Prix",
     "purchase_price": "Prix d'achat",
     "min_quantity": "Quantité min",
@@ -412,6 +413,7 @@
     "confirm_and_print": "Confirmer et imprimer",
     "receipt": "Reçu",
     "thank_you": "Merci de votre visite !",
+    "select_variant_to_add": "Sélectionnez une variante à ajouter au panier",
     "client": "Client"
   },
   "finance": {

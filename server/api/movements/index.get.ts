@@ -7,6 +7,7 @@ export default defineEventHandler(async () => {
     orderBy: [desc(tables.stockMovements.createdAt)],
     with: {
       product: true,
+      variant: true,
       supplier: true,
     },
     limit: 100,

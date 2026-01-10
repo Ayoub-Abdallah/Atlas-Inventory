@@ -14,6 +14,7 @@ const isSubmitting = ref(false);
 // Form state
 const form = reactive({
   productId: '',
+  variantId: '',
   type: 'in' as 'in' | 'out' | 'adjustment',
   quantity: 1,
   reason: '',
@@ -24,6 +25,21 @@ const form = reactive({
 // Fetch products and suppliers for dropdowns
 const { data: products } = await useFetch('/api/products');
 const { data: suppliers } = await useFetch('/api/suppliers');
+
+// Get variants for selected product
+const selectedProduct = computed(() => {
+  if (!form.productId || !products.value) return null;
+  return products.value.find((p: any) => p.id === form.productId);
+});
+
+const productVariants = computed(() => {
+  return selectedProduct.value?.variants || [];
+});
+
+// Watch for product change to reset variant selection
+watch(() => form.productId, () => {
+  form.variantId = '';
+});
 
 // Filters
 const filters = reactive({
@@ -130,6 +146,7 @@ function openCreateModal() {
 function resetForm() {
   Object.assign(form, {
     productId: '',
+    variantId: '',
     type: 'in',
     quantity: 1,
     reason: '',
@@ -144,17 +161,31 @@ async function createMovement() {
     return;
   }
 
+  // If product has variants but no variant selected, show error
+  if (productVariants.value.length > 0 && !form.variantId) {
+    toast.warning('Select a variant');
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     await $fetch('/api/movements', {
       method: 'POST',
-      body: form,
+      body: {
+        productId: form.productId,
+        variantId: form.variantId || null,
+        type: form.type,
+        quantity: form.quantity,
+        reason: form.reason,
+        reference: form.reference,
+        supplierId: form.supplierId,
+      },
     });
     toast.success('Movement recorded');
     isModalOpen.value = false;
     refresh();
-  } catch (error) {
-    toast.error('Failed to record');
+  } catch (error: any) {
+    toast.error(error?.data?.message || 'Failed to record');
     console.error('Failed to create movement:', error);
   } finally {
     isSubmitting.value = false;
@@ -309,12 +340,13 @@ function formatDate(date: Date | string) {
             <div class="min-w-0">
               <p class="truncate text-xs font-medium text-gray-900">
                 {{ item.product?.name || 'Unknown' }}
+                <span v-if="item.variant" class="text-gray-500">- {{ item.variant.name }}</span>
               </p>
               <p
-                v-if="item.product?.sku"
+                v-if="item.variant?.sku || item.product?.sku"
                 class="truncate text-xs text-gray-400 font-mono"
               >
-                {{ item.product.sku }}
+                {{ item.variant?.sku || item.product?.sku }}
               </p>
             </div>
           </div>
@@ -398,6 +430,23 @@ function formatDate(date: Date | string) {
               :value="product.id"
             >
               {{ product.name }} ({{ product.stockQuantity }} {{ t('movements.in_stock') }})
+            </option>
+          </select>
+        </div>
+
+        <!-- Variant selector (shown only if product has variants) -->
+        <div v-if="productVariants.length > 0">
+          <label class="label"
+            >{{ t('products.variant') }} <span class="text-red-500">*</span></label
+          >
+          <select v-model="form.variantId" class="input" required>
+            <option value="">{{ t('products.select_variant') }}</option>
+            <option
+              v-for="variant in productVariants"
+              :key="variant.id"
+              :value="variant.id"
+            >
+              {{ variant.name }} ({{ variant.stockQuantity }} {{ t('movements.in_stock') }})
             </option>
           </select>
         </div>

@@ -171,6 +171,7 @@
     "no_options": "No options added. Click \"Add Option\" to start.",
     "generate_variants": "Generate Variants",
     "variant": "Variant",
+    "select_variant": "Select a variant",
     "price": "Price",
     "purchase_price": "Purchase Price",
     "min_quantity": "Min Quantity",
@@ -413,6 +414,7 @@
     "confirm_and_print": "Confirm & Print",
     "receipt": "Receipt",
     "thank_you": "Thank you for your visit!",
+    "select_variant_to_add": "Select a variant to add to cart",
     "client": "Client",
     "sale_confirmed": "Sale confirmed"
   },
