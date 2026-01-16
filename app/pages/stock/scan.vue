@@ -4,7 +4,16 @@ definePageMeta({
 });
 
 const { t, locale } = useI18n();
-const { addToast } = useToast();
+const toast = useToast();
+
+// Helper function to add toast (compatible with old code)
+const addToast = (options: { title: string; message?: string; type: 'success' | 'error' | 'warning' | 'info' }) => {
+  toast.add({
+    title: options.title,
+    description: options.message,
+    type: options.type,
+  });
+};
 
 // Scanner composable
 const scanner = useScanner({
@@ -32,6 +41,133 @@ const clientName = ref('');
 const clientInfo = ref('');
 const confirmedSale = ref<any>(null);
 const showReceiptModal = ref(false);
+
+// Payment & Customer state for checkout
+const paymentType = ref<'immediate' | 'credit'>('immediate');
+const customerSearchQuery = ref('');
+const selectedCustomerId = ref<string | null>(null);
+const isCustomerDropdownOpen = ref(false);
+const paidAmount = ref(0);
+const paymentMethod = ref('cash');
+const dueDate = ref('');
+const showNewCustomerForm = ref(false);
+const newCustomerName = ref('');
+const newCustomerPhone = ref('');
+const editableFinalAmount = ref(0);
+const isEditingFinalAmount = ref(false);
+
+// Fetch customers
+const { data: customersData, refresh: refreshCustomers } = await useFetch('/api/customers');
+const customers = computed(() => customersData.value || []);
+
+// Filtered customers based on search
+const filteredCustomers = computed(() => {
+  if (!customerSearchQuery.value.trim()) {
+    return customers.value || [];
+  }
+  const query = customerSearchQuery.value.toLowerCase();
+  return (customers.value || []).filter((c: any) => 
+    c.name.toLowerCase().includes(query) ||
+    (c.phone && c.phone.includes(query)) ||
+    (c.email && c.email.toLowerCase().includes(query))
+  );
+});
+
+// Selected customer
+const selectedCustomer = computed(() => 
+  customers.value.find((c: any) => c.id === selectedCustomerId.value)
+);
+
+// Final amount (can be edited for discounts)
+const finalAmount = computed(() => {
+  if (paymentType.value === 'credit' && isEditingFinalAmount.value) {
+    return editableFinalAmount.value;
+  }
+  return saleDraft.total.value;
+});
+
+// Outstanding balance for credit sales
+const outstandingBalance = computed(() => {
+  if (paymentType.value === 'immediate') return 0;
+  return Math.max(0, finalAmount.value - paidAmount.value);
+});
+
+// Can confirm sale
+const canConfirmSale = computed(() => {
+  if (paymentType.value === 'credit' && !selectedCustomerId.value) {
+    return false;
+  }
+  return !saleDraft.isEmpty.value;
+});
+
+// Payment methods
+const paymentMethods = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'card', label: 'Card' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'mobile', label: 'Mobile Payment' },
+  { value: 'check', label: 'Check' },
+];
+
+// Select customer from search
+const selectCustomer = (customer: any) => {
+  selectedCustomerId.value = customer.id;
+  customerSearchQuery.value = customer.name;
+  isCustomerDropdownOpen.value = false;
+};
+
+// Clear customer selection
+const clearCustomerSelection = () => {
+  selectedCustomerId.value = null;
+  customerSearchQuery.value = '';
+};
+
+// Set payment type
+const setPaymentType = (type: 'immediate' | 'credit') => {
+  paymentType.value = type;
+  if (type === 'immediate') {
+    paidAmount.value = saleDraft.total.value;
+    isEditingFinalAmount.value = false;
+  } else {
+    paidAmount.value = 0;
+    editableFinalAmount.value = saleDraft.total.value;
+  }
+};
+
+// Enable final amount editing
+const enableFinalAmountEdit = () => {
+  editableFinalAmount.value = saleDraft.total.value;
+  isEditingFinalAmount.value = true;
+};
+
+// Create quick customer
+const createQuickCustomer = async () => {
+  if (!newCustomerName.value.trim()) {
+    addToast({ title: t('sales.enter_customer_name'), type: 'warning' });
+    return;
+  }
+  
+  try {
+    const response = await $fetch('/api/customers', {
+      method: 'POST',
+      body: {
+        name: newCustomerName.value,
+        phone: newCustomerPhone.value || null,
+      },
+    });
+    
+    await refreshCustomers();
+    selectedCustomerId.value = (response as any).id;
+    customerSearchQuery.value = newCustomerName.value;
+    showNewCustomerForm.value = false;
+    newCustomerName.value = '';
+    newCustomerPhone.value = '';
+    addToast({ title: t('customers.customer_created'), type: 'success' });
+  } catch (error) {
+    console.error('Failed to create customer:', error);
+    addToast({ title: t('customers.customer_create_error'), type: 'error' });
+  }
+};
 
 // Variant selection modal state
 const showVariantModal = ref(false);
@@ -111,7 +247,6 @@ async function handleBarcodeScan(code: string) {
 function quickAddToCart(product: any, variant?: any) {
   const price = variant?.price ?? product.sellingPrice ?? 0;
   const cost = variant?.costPrice ?? product.costPrice ?? 0;
-  const taxRate = product.tax?.rate ?? 0;
   
   saleDraft.addItem({
     productId: product.id,
@@ -122,7 +257,7 @@ function quickAddToCart(product: any, variant?: any) {
     quantity: 1,
     unitPrice: price,
     unitCost: cost,
-    taxRate,
+    taxRate: 0, // No automatic tax - tax can be added manually if needed
   });
   
   addToast({
@@ -330,23 +465,49 @@ async function handleStockOut() {
 // Checkout functions
 function openCheckout() {
   if (saleDraft.isEmpty.value) return;
+  // Reset state
+  paymentType.value = 'immediate';
+  paidAmount.value = saleDraft.total.value;
+  editableFinalAmount.value = saleDraft.total.value;
+  isEditingFinalAmount.value = false;
+  selectedCustomerId.value = null;
+  customerSearchQuery.value = '';
+  showNewCustomerForm.value = false;
   showCheckoutModal.value = true;
 }
 
 async function confirmSale() {
   if (saleDraft.isEmpty.value) return;
   
+  // Validate credit sales require customer
+  if (paymentType.value === 'credit' && !selectedCustomerId.value) {
+    addToast({ title: t('sales.credit_requires_customer'), type: 'error' });
+    return;
+  }
+  
   isConfirming.value = true;
   try {
+    // Determine amounts
+    const actualPaidAmount = paymentType.value === 'immediate' ? saleDraft.total.value : paidAmount.value;
+    const actualFinalAmount = paymentType.value === 'credit' && isEditingFinalAmount.value 
+      ? editableFinalAmount.value 
+      : saleDraft.total.value;
+
     // First create the sale
     const sale = await saleDraft.createSale();
     
-    // Then confirm it with client info
+    // Then confirm it with payment info
     const confirmed = await $fetch(`/api/sales/${(sale as any).id}/confirm`, {
       method: 'POST',
       body: {
-        clientName: clientName.value || undefined,
+        clientName: clientName.value || selectedCustomer.value?.name || undefined,
         clientInfo: clientInfo.value || undefined,
+        customerId: selectedCustomerId.value || undefined,
+        paidAmount: actualPaidAmount,
+        finalAmount: actualFinalAmount,
+        paymentMethod: paymentMethod.value,
+        paymentType: paymentType.value,
+        dueDate: dueDate.value || undefined,
       },
     });
     
@@ -356,16 +517,21 @@ async function confirmSale() {
     showCheckoutModal.value = false;
     showReceiptModal.value = true;
     
-    // Reset client info
+    // Reset state
     clientName.value = '';
     clientInfo.value = '';
+    selectedCustomerId.value = null;
+    customerSearchQuery.value = '';
+    paidAmount.value = 0;
+    dueDate.value = '';
     
     addToast({
-      title: t('sales.sale_confirmed'),
+      title: paymentType.value === 'immediate' ? t('sales.sale_confirmed_paid') : t('sales.sale_confirmed_credit'),
       message: t('sales.sale_success'),
       type: 'success',
     });
   } catch (error: any) {
+    console.error('Sale confirmation error:', error);
     if (error.data?.items) {
       // Insufficient stock error
       addToast({
@@ -378,7 +544,7 @@ async function confirmSale() {
     } else {
       addToast({
         title: t('errors.server_error'),
-        message: error.message || t('sales.sale_failed'),
+        message: error.data?.message || error.message || t('sales.sale_failed'),
         type: 'error',
       });
     }
@@ -845,21 +1011,31 @@ onMounted(() => {
       size="lg"
       @close="showCheckoutModal = false"
     >
-      <div class="space-y-6">
-        <!-- Order Summary -->
+      <div class="space-y-5">
+        <!-- Order Summary with Editable Prices -->
         <div class="bg-gray-50 rounded-lg p-4">
           <h4 class="font-medium text-gray-900 mb-3">{{ t('sales.order_summary') }}</h4>
           <div class="space-y-2 max-h-48 overflow-y-auto">
             <div
               v-for="item in saleDraft.items.value"
               :key="item.id"
-              class="flex items-center justify-between text-sm"
+              class="flex items-center justify-between text-sm py-1"
             >
-              <span class="text-gray-700">
+              <span class="text-gray-700 flex-1">
                 {{ item.quantity }}x {{ item.productName }}
                 <span v-if="item.variantName" class="text-gray-500">({{ item.variantName }})</span>
               </span>
-              <span class="font-medium">{{ formatCurrency(item.lineTotal) }}</span>
+              <div class="flex items-center gap-2">
+                <input
+                  type="number"
+                  :value="item.unitPrice"
+                  min="0"
+                  step="0.01"
+                  class="w-24 text-right text-sm border border-gray-200 rounded px-2 py-1"
+                  @change="saleDraft.updateItemPrice(item.productId, item.variantId || null, Number(($event.target as HTMLInputElement).value))"
+                />
+                <span class="font-medium w-28 text-right">{{ formatCurrency(item.lineTotal) }}</span>
+              </div>
             </div>
           </div>
           <div class="border-t border-gray-200 mt-3 pt-3 flex items-center justify-between font-bold">
@@ -868,30 +1044,249 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Client Info (Optional) -->
-        <div class="space-y-4">
-          <h4 class="font-medium text-gray-900">{{ t('sales.client_info_optional') }}</h4>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              {{ t('sales.client_name') }}
-            </label>
-            <input
-              v-model="clientName"
-              type="text"
-              class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              :placeholder="t('sales.client_name_placeholder')"
-            />
+        <!-- Payment Type Selection -->
+        <div class="border rounded-lg overflow-hidden">
+          <div class="grid grid-cols-2">
+            <button
+              type="button"
+              :class="[
+                'py-4 px-4 text-center transition-colors font-medium',
+                paymentType === 'immediate' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ]"
+              @click="setPaymentType('immediate')"
+            >
+              <Icon name="lucide:banknote" class="h-5 w-5 mx-auto mb-1" />
+              <div class="text-sm">{{ t('sales.immediate_payment') }}</div>
+              <div class="text-xs opacity-75">{{ t('sales.immediate_payment_desc') }}</div>
+            </button>
+            <button
+              type="button"
+              :class="[
+                'py-4 px-4 text-center transition-colors font-medium border-l',
+                paymentType === 'credit' 
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ]"
+              @click="setPaymentType('credit')"
+            >
+              <Icon name="lucide:clock" class="h-5 w-5 mx-auto mb-1" />
+              <div class="text-sm">{{ t('sales.credit_sale') }}</div>
+              <div class="text-xs opacity-75">{{ t('sales.credit_sale_desc') }}</div>
+            </button>
           </div>
+        </div>
+
+        <!-- Immediate Payment Section -->
+        <div v-if="paymentType === 'immediate'" class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div class="flex items-center gap-2 text-green-700 mb-2">
+            <Icon name="lucide:check-circle" class="h-5 w-5" />
+            <span class="font-medium">{{ t('sales.full_payment_received') }}</span>
+          </div>
+          <p class="text-sm text-green-600">
+            {{ t('sales.amount') }}: <strong>{{ formatCurrency(saleDraft.total.value) }}</strong>
+          </p>
+          
+          <div class="mt-3">
+            <label class="block text-sm text-green-700 mb-1">{{ t('sales.payment_method') }}</label>
+            <select v-model="paymentMethod" class="w-full border border-green-300 rounded-lg px-3 py-2 text-sm bg-white">
+              <option v-for="method in paymentMethods" :key="method.value" :value="method.value">
+                {{ method.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Credit Sale Section -->
+        <div v-if="paymentType === 'credit'" class="space-y-4">
+          <!-- Customer Selection (Required) -->
+          <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div class="flex items-center gap-2 text-orange-700 mb-3">
+              <Icon name="lucide:user" class="h-5 w-5" />
+              <span class="font-medium">{{ t('sales.select_customer_required') }}</span>
+            </div>
+            
+            <div class="relative">
+              <div class="flex gap-2">
+                <div class="flex-1 relative">
+                  <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    v-model="customerSearchQuery"
+                    type="text"
+                    :placeholder="t('sales.search_customer_name_phone')"
+                    class="w-full border border-orange-300 rounded-lg pl-9 pr-3 py-2 text-sm bg-white"
+                    @focus="isCustomerDropdownOpen = true"
+                    @input="isCustomerDropdownOpen = true"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                  @click="showNewCustomerForm = !showNewCustomerForm"
+                >
+                  <Icon name="lucide:user-plus" class="h-4 w-4" />
+                </button>
+              </div>
+              
+              <!-- Click outside backdrop to close dropdown -->
+              <div 
+                v-if="isCustomerDropdownOpen && filteredCustomers.length > 0 && !selectedCustomerId"
+                class="fixed inset-0 z-[5]"
+                @click="isCustomerDropdownOpen = false"
+              />
+              
+              <!-- Search Results Dropdown -->
+              <div 
+                v-if="isCustomerDropdownOpen && filteredCustomers.length > 0 && !selectedCustomerId"
+                class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto"
+              >
+                <button
+                  v-for="customer in filteredCustomers"
+                  :key="customer.id"
+                  type="button"
+                  class="w-full px-3 py-2 text-left text-sm hover:bg-orange-50 flex justify-between items-center border-b last:border-b-0"
+                  @click="selectCustomer(customer)"
+                >
+                  <div>
+                    <div class="font-medium">{{ customer.name }}</div>
+                    <div class="text-xs text-gray-500">{{ customer.phone || customer.email || '' }}</div>
+                  </div>
+                  <div v-if="customer.currentBalance > 0" class="text-xs text-orange-600">
+                    {{ t('credit.balance') }}: {{ formatCurrency(customer.currentBalance) }}
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Selected Customer Display -->
+            <div v-if="selectedCustomer" class="mt-3 bg-white rounded-lg p-3 border border-orange-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <Icon name="lucide:user-check" class="h-5 w-5 text-green-500" />
+                  <div>
+                    <div class="font-medium text-gray-900">{{ selectedCustomer.name }}</div>
+                    <div class="text-xs text-gray-500">{{ selectedCustomer.phone || '' }}</div>
+                  </div>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-red-500" @click="clearCustomerSelection">
+                  <Icon name="lucide:x" class="h-5 w-5" />
+                </button>
+              </div>
+              <div v-if="selectedCustomer.currentBalance > 0" class="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                <Icon name="lucide:alert-circle" class="inline h-3 w-3 mr-1" />
+                {{ t('sales.existing_balance') }}: {{ formatCurrency(selectedCustomer.currentBalance) }}
+              </div>
+            </div>
+
+            <!-- Quick Add Customer Form -->
+            <div v-if="showNewCustomerForm" class="mt-3 bg-white rounded-lg p-3 border border-orange-200 space-y-2">
+              <div class="text-sm font-medium text-gray-700 mb-2">{{ t('sales.add_new_customer') }}</div>
+              <input
+                v-model="newCustomerName"
+                type="text"
+                :placeholder="t('credit.customer_name') + ' *'"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+              <div class="flex gap-2">
+                <input
+                  v-model="newCustomerPhone"
+                  type="text"
+                  :placeholder="t('credit.phone')"
+                  class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  class="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                  @click="createQuickCustomer"
+                >
+                  {{ t('common.add') }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Validation message -->
+            <div v-if="!selectedCustomerId" class="mt-2 text-xs text-red-500">
+              <Icon name="lucide:alert-triangle" class="inline h-3 w-3 mr-1" />
+              {{ t('sales.credit_requires_customer') }}
+            </div>
+          </div>
+
+          <!-- Editable Final Amount -->
+          <div class="bg-white border rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-medium text-gray-700">{{ t('sales.final_amount') }}</span>
+              <button
+                v-if="!isEditingFinalAmount"
+                type="button"
+                class="text-sm text-blue-600 hover:text-blue-700"
+                @click="enableFinalAmountEdit"
+              >
+                <Icon name="lucide:edit-2" class="inline h-3 w-3 mr-1" />
+                {{ t('sales.edit_for_discount') }}
+              </button>
+            </div>
+            
+            <div v-if="isEditingFinalAmount" class="space-y-2">
+              <input
+                v-model.number="editableFinalAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                :max="saleDraft.total.value"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg font-bold text-center"
+              />
+              <div v-if="editableFinalAmount < saleDraft.total.value" class="text-xs text-green-600 text-center">
+                {{ t('sales.discount_applied') }}: {{ formatCurrency(saleDraft.total.value - editableFinalAmount) }}
+              </div>
+            </div>
+            <div v-else class="text-2xl font-bold text-center text-gray-900">
+              {{ formatCurrency(saleDraft.total.value) }}
+            </div>
+          </div>
+
+          <!-- Advance Payment Option -->
+          <div class="bg-white border rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-medium text-gray-700">{{ t('sales.advance_payment') }}</span>
+              <span class="text-xs text-gray-500">{{ t('sales.optional') }}</span>
+            </div>
+            
+            <div class="flex gap-2">
+              <input
+                v-model.number="paidAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                :max="finalAmount"
+                :placeholder="t('sales.enter_amount')"
+                class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+              <select v-model="paymentMethod" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option v-for="method in paymentMethods" :key="method.value" :value="method.value">
+                  {{ method.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Outstanding Balance Summary -->
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-sm text-red-700 font-medium">{{ t('sales.outstanding_balance') }}</span>
+                <p class="text-xs text-red-600">{{ t('sales.to_be_paid_later') }}</p>
+              </div>
+              <span class="text-xl font-bold text-red-600">{{ formatCurrency(outstandingBalance) }}</span>
+            </div>
+          </div>
+
+          <!-- Due Date -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-              {{ t('sales.client_notes') }}
+              {{ t('sales.due_date') }} ({{ t('sales.optional') }})
             </label>
-            <textarea
-              v-model="clientInfo"
-              rows="2"
-              class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              :placeholder="t('sales.client_notes_placeholder')"
-            />
+            <input v-model="dueDate" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
         </div>
       </div>
@@ -902,12 +1297,13 @@ onMounted(() => {
             {{ t('app.cancel') }}
           </UiButton>
           <UiButton
-            variant="primary"
+            :variant="paymentType === 'immediate' ? 'primary' : 'warning'"
             :loading="isConfirming"
+            :disabled="!canConfirmSale"
             @click="confirmSale"
           >
-            <Icon name="lucide:check" class="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-            {{ t('sales.confirm_and_print') }}
+            <Icon :name="paymentType === 'immediate' ? 'lucide:check' : 'lucide:clock'" class="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+            {{ paymentType === 'immediate' ? t('sales.confirm_paid') : t('sales.confirm_credit') }}
           </UiButton>
         </div>
       </template>

@@ -14,6 +14,10 @@ const customFrom = ref('');
 const customTo = ref('');
 const isLoading = ref(true);
 
+// Add 'Today' to date range
+const todayStart = new Date();
+todayStart.setHours(0, 0, 0, 0);
+
 // Fetch data
 const { data: summaryData, refresh: refreshSummary } = await useFetch('/api/finance/summary', {
   query: computed(() => {
@@ -24,6 +28,9 @@ const { data: summaryData, refresh: refreshSummary } = await useFetch('/api/fina
     let from = new Date();
     
     switch (dateRange.value) {
+      case 'today':
+        from.setHours(0, 0, 0, 0);
+        break;
       case '30d':
         from.setDate(from.getDate() - 30);
         break;
@@ -40,8 +47,21 @@ const { data: summaryData, refresh: refreshSummary } = await useFetch('/api/fina
 });
 
 const { data: chartData, refresh: refreshCharts } = await useFetch('/api/finance/chart-data', {
-  query: computed(() => ({ range: dateRange.value })),
+  query: computed(() => {
+    // Always include today in the range if 'today' is selected
+    if (dateRange.value === 'today') {
+      const now = new Date();
+      const from = new Date();
+      from.setHours(0, 0, 0, 0);
+      return { from: from.toISOString().split('T')[0], to: now.toISOString().split('T')[0] };
+    }
+    return { range: dateRange.value };
+  }),
 });
+
+// Fetch settings for currency
+const { data: settings } = await useFetch('/api/settings');
+const currency = computed(() => settings.value?.currency || 'DZD');
 
 isLoading.value = false;
 
@@ -64,7 +84,7 @@ const applyCustomRange = () => {
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'EUR',
+    currency: currency.value,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -73,7 +93,7 @@ const formatCurrency = (value: number) => {
 const formatCurrencyFull = (value: number) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'EUR',
+    currency: currency.value,
   }).format(value);
 };
 
@@ -233,6 +253,40 @@ const formatDate = (date: Date | string) => {
     year: 'numeric',
   }).format(new Date(date));
 };
+
+// Computed date range parameters
+const dateParams = computed(() => {
+  const now = new Date();
+  let from: Date;
+  let to = now;
+
+  switch (dateRange.value) {
+    case 'today':
+      from = new Date();
+      from.setHours(0, 0, 0, 0);
+      break;
+    case '30d':
+      from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '90d':
+      from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case '1y':
+      from = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      break;
+    case 'custom':
+      from = customFrom.value ? new Date(customFrom.value) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      to = customTo.value ? new Date(customTo.value) : now;
+      break;
+    default:
+      from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  return {
+    startDate: from.toISOString(),
+    endDate: to.toISOString(),
+  };
+});
 </script>
 
 <template>
@@ -254,6 +308,7 @@ const formatDate = (date: Date | string) => {
           v-model="dateRange"
           class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
         >
+          <option value="today">{{ t('finance.today') }}</option>
           <option value="30d">{{ t('finance.last_30_days') }}</option>
           <option value="90d">{{ t('finance.last_90_days') }}</option>
           <option value="1y">{{ t('finance.last_year') }}</option>
@@ -299,7 +354,7 @@ const formatDate = (date: Date | string) => {
       </p>
     </div>
 
-    <!-- KPI Cards -->
+    <!-- KPI Cards - Row 1: Revenue & Profit -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <UiStatCard
         :title="t('finance.revenue')"
@@ -308,15 +363,17 @@ const formatDate = (date: Date | string) => {
         icon-color="primary"
       />
       <UiStatCard
-        :title="t('finance.gross_profit')"
-        :value="formatCurrency(summaryData?.summary?.grossProfit || 0)"
-        icon="lucide:wallet"
+        :title="t('finance.actual_income')"
+        :value="formatCurrency(summaryData?.summary?.actualIncome || 0)"
+        :subtitle="t('finance.paid_only')"
+        icon="lucide:banknote"
         icon-color="success"
       />
       <UiStatCard
-        :title="t('finance.taxes_collected')"
-        :value="formatCurrency(summaryData?.summary?.taxesCollected || 0)"
-        icon="lucide:receipt"
+        :title="t('finance.pending_receivables')"
+        :value="formatCurrency(summaryData?.summary?.pendingReceivables || 0)"
+        :subtitle="t('finance.unpaid_credit')"
+        icon="lucide:clock"
         icon-color="warning"
       />
       <UiStatCard
@@ -325,6 +382,68 @@ const formatDate = (date: Date | string) => {
         icon="lucide:shopping-bag"
         icon-color="default"
       />
+    </div>
+
+    <!-- KPI Cards - Row 2: Profit & Loss -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <UiStatCard
+        :title="t('finance.gross_profit')"
+        :value="formatCurrency(summaryData?.summary?.grossProfit || 0)"
+        icon="lucide:wallet"
+        icon-color="success"
+      />
+      <UiStatCard
+        :title="t('finance.total_expenses')"
+        :value="formatCurrency(summaryData?.summary?.totalExpenses || 0)"
+        icon="lucide:trending-down"
+        icon-color="error"
+      />
+      <UiStatCard
+        :title="t('finance.net_profit')"
+        :value="formatCurrency(summaryData?.summary?.netProfit || 0)"
+        :class="{ 'ring-2 ring-green-200': (summaryData?.summary?.netProfit || 0) > 0, 'ring-2 ring-red-200': (summaryData?.summary?.netProfit || 0) < 0 }"
+        icon="lucide:calculator"
+        :icon-color="(summaryData?.summary?.netProfit || 0) >= 0 ? 'success' : 'error'"
+      />
+      <UiStatCard
+        :title="t('finance.taxes_collected')"
+        :value="formatCurrency(summaryData?.summary?.taxesCollected || 0)"
+        icon="lucide:receipt"
+        icon-color="default"
+      />
+    </div>
+
+    <!-- Payment Status Overview -->
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h3 class="font-semibold text-gray-900 mb-4">{{ t('finance.payment_status') }}</h3>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="text-center p-4 bg-green-50 rounded-lg">
+          <p class="text-2xl font-bold text-green-600">
+            {{ summaryData?.salesByPaymentStatus?.paid || 0 }}
+          </p>
+          <p class="text-sm text-green-700">{{ t('finance.fully_paid') }}</p>
+        </div>
+        <div class="text-center p-4 bg-yellow-50 rounded-lg">
+          <p class="text-2xl font-bold text-yellow-600">
+            {{ summaryData?.salesByPaymentStatus?.partial || 0 }}
+          </p>
+          <p class="text-sm text-yellow-700">{{ t('finance.partial_payments') }}</p>
+        </div>
+        <div class="text-center p-4 bg-red-50 rounded-lg">
+          <p class="text-2xl font-bold text-red-600">
+            {{ summaryData?.salesByPaymentStatus?.unpaid || 0 }}
+          </p>
+          <p class="text-sm text-red-700">{{ t('finance.unpaid_sales') }}</p>
+        </div>
+      </div>
+      
+      <!-- Link to Credit page -->
+      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+        <NuxtLink to="/credit" class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+          {{ t('finance.view_credit_details') }}
+          <Icon name="lucide:arrow-right" class="h-4 w-4" />
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- Charts Row -->
@@ -421,10 +540,10 @@ const formatDate = (date: Date | string) => {
           <thead>
             <tr class="text-left text-xs text-gray-500 uppercase border-b">
               <th class="pb-3 font-medium">{{ t('sales.sale_date') }}</th>
-              <th class="pb-3 font-medium">{{ t('suppliers.title') }}</th>
-              <th class="pb-3 font-medium text-right">{{ t('sales.sale_items') }}</th>
-              <th class="pb-3 font-medium text-right">{{ t('sales.tax_amount') }}</th>
+              <th class="pb-3 font-medium">{{ t('sales.customer') }}</th>
               <th class="pb-3 font-medium text-right">{{ t('sales.total') }}</th>
+              <th class="pb-3 font-medium text-right">{{ t('sales.paid') }}</th>
+              <th class="pb-3 font-medium text-center">{{ t('sales.payment_status') }}</th>
               <th class="pb-3 font-medium text-center">{{ t('app.status') }}</th>
             </tr>
           </thead>
@@ -438,16 +557,27 @@ const formatDate = (date: Date | string) => {
                 {{ formatDate(sale.createdAt) }}
               </td>
               <td class="py-3 text-gray-600">
-                {{ sale.supplierName || '-' }}
-              </td>
-              <td class="py-3 text-right text-gray-600">
-                {{ sale.itemCount }}
-              </td>
-              <td class="py-3 text-right text-gray-600">
-                {{ formatCurrencyFull(sale.taxAmount || 0) }}
+                {{ sale.customerName || sale.supplierName || '-' }}
               </td>
               <td class="py-3 text-right text-gray-900 font-medium">
                 {{ formatCurrencyFull(sale.totalAmount) }}
+              </td>
+              <td class="py-3 text-right text-gray-600">
+                {{ formatCurrencyFull(sale.paidAmount || 0) }}
+              </td>
+              <td class="py-3 text-center">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  :class="{
+                    'bg-green-100 text-green-800': sale.paymentStatus === 'paid',
+                    'bg-yellow-100 text-yellow-800': sale.paymentStatus === 'partial',
+                    'bg-red-100 text-red-800': sale.paymentStatus === 'unpaid',
+                  }"
+                >
+                  {{ sale.paymentStatus === 'paid' ? t('sales.paid') : 
+                     sale.paymentStatus === 'partial' ? t('sales.partial') : 
+                     t('sales.unpaid') }}
+                </span>
               </td>
               <td class="py-3 text-center">
                 <span

@@ -6,13 +6,30 @@ export default defineEventHandler(async (event) => {
   const saleId = getRouterParam(event, 'id');
   const body = await readBody(event);
 
-  // Extract client information from request body
-  const { clientName, clientInfo } = body || {};
+  // Extract client and payment information from request body
+  const { 
+    clientName, 
+    clientInfo, 
+    customerId, 
+    paidAmount = 0,
+    finalAmount, // Optional: for discounted credit sales
+    paymentType = 'immediate', // 'immediate' or 'credit'
+    paymentMethod = 'cash',
+    dueDate 
+  } = body || {};
 
   if (!saleId) {
     throw createError({
       statusCode: 400,
       message: 'Sale ID is required',
+    });
+  }
+
+  // Credit sales require a customer
+  if (paymentType === 'credit' && !customerId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Credit sales require a customer to be selected',
     });
   }
 
@@ -161,17 +178,81 @@ export default defineEventHandler(async (event) => {
     await syncProductStockFromVariants(db, productId);
   }
 
-  // Update sale status to confirmed with client info and timestamp
+  // Calculate payment status based on payment type and amounts
+  const originalTotalAmount = sale.totalAmount;
+  
+  // For credit sales, allow a custom final amount (for discounts)
+  // The final amount is what the customer owes, which may be less than original
+  const effectiveTotalAmount = (paymentType === 'credit' && finalAmount !== undefined && finalAmount > 0)
+    ? Math.min(finalAmount, originalTotalAmount)
+    : originalTotalAmount;
+  
+  // For immediate payment, the full amount is paid
+  // For credit sales, use the provided paid amount (can be 0 for full credit, or partial)
+  const actualPaidAmount = paymentType === 'immediate' 
+    ? effectiveTotalAmount 
+    : Math.min(Math.max(0, paidAmount || 0), effectiveTotalAmount);
+  
+  let paymentStatus: 'unpaid' | 'partial' | 'paid' = 'unpaid';
+  if (actualPaidAmount >= effectiveTotalAmount - 0.01) {
+    paymentStatus = 'paid';
+  } else if (actualPaidAmount > 0) {
+    paymentStatus = 'partial';
+  }
+
+  // Calculate discount amount if any
+  const discountAmount = originalTotalAmount - effectiveTotalAmount;
+
+  // Update sale status to confirmed with client info, payment info, and timestamp
   await db
     .update(tables.sales)
     .set({
       status: 'confirmed',
+      customerId: customerId || null,
       clientName: clientName || null,
       clientInfo: clientInfo || null,
+      totalAmount: effectiveTotalAmount, // Store the effective amount (after discount)
+      paidAmount: actualPaidAmount,
+      paymentStatus,
+      dueDate: dueDate ? new Date(dueDate) : null,
       confirmedAt: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(tables.sales.id, saleId));
+
+  // Create initial payment record if any amount was paid
+  if (actualPaidAmount > 0) {
+    await db.insert(tables.payments).values({
+      id: generateId('pay'),
+      saleId: saleId,
+      customerId: customerId || null,
+      amount: actualPaidAmount,
+      paymentMethod: paymentMethod || 'cash',
+      reference: body.paymentReference || null,
+      notes: paymentType === 'immediate' 
+        ? 'Full payment at sale' 
+        : 'Advance payment at credit sale',
+      createdBy: sale.userId,
+    });
+  }
+
+  // Update customer balance if customer is selected and there's outstanding amount
+  if (customerId && paymentStatus !== 'paid') {
+    const outstandingAmount = effectiveTotalAmount - actualPaidAmount;
+    const customer = await db.query.customers.findFirst({
+      where: eq(tables.customers.id, customerId),
+    });
+
+    if (customer) {
+      await db
+        .update(tables.customers)
+        .set({
+          currentBalance: (customer.currentBalance || 0) + outstandingAmount,
+          updatedAt: new Date(),
+        })
+        .where(eq(tables.customers.id, customerId));
+    }
+  }
 
   // Fetch the updated sale
   const confirmedSale = await db.query.sales.findFirst({
@@ -179,6 +260,7 @@ export default defineEventHandler(async (event) => {
     with: {
       supplier: true,
       user: true,
+      customer: true,
       items: {
         with: {
           product: true,

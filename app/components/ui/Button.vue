@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'outline' | 'warning' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   loading?: boolean;
   disabled?: boolean;
@@ -23,6 +23,8 @@ const variantClasses = {
   ghost: 'hover:bg-gray-100 hover:text-gray-900',
   destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
   outline: 'border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900',
+  warning: 'bg-orange-500 text-white hover:bg-orange-600 shadow-sm',
+  danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
 };
 
 const sizeClasses = {

@@ -378,6 +378,33 @@ export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
 }));
 
 // ============================================================================
+// CUSTOMERS
+// ============================================================================
+export const customers = sqliteTable('customers', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  address: text('address'),
+  city: text('city'),
+  notes: text('notes'),
+  creditLimit: real('credit_limit').default(0), // 0 = no limit
+  currentBalance: real('current_balance').default(0), // Outstanding balance
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const customersRelations = relations(customers, ({ many }) => ({
+  sales: many(sales),
+  payments: many(payments),
+}));
+
+// ============================================================================
 // SALES
 // ============================================================================
 export const sales = sqliteTable('sales', {
@@ -385,13 +412,19 @@ export const sales = sqliteTable('sales', {
   invoiceNumber: text('invoice_number'),
   supplierId: text('supplier_id').references(() => suppliers.id),
   userId: text('user_id').references(() => users.id),
+  customerId: text('customer_id').references(() => customers.id),
   status: text('status', { enum: ['draft', 'confirmed', 'cancelled'] })
     .notNull()
     .default('draft'),
+  paymentStatus: text('payment_status', { enum: ['unpaid', 'partial', 'paid'] })
+    .notNull()
+    .default('unpaid'),
   totalAmount: real('total_amount').notNull().default(0),
   totalCost: real('total_cost').default(0),
   taxAmount: real('tax_amount').default(0),
-  // Client info
+  paidAmount: real('paid_amount').default(0),
+  dueDate: integer('due_date', { mode: 'timestamp' }),
+  // Client info (legacy, kept for backward compatibility)
   clientName: text('client_name'),
   clientInfo: text('client_info'),
   notes: text('notes'),
@@ -414,8 +447,49 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
     fields: [sales.userId],
     references: [users.id],
   }),
+  customer: one(customers, {
+    fields: [sales.customerId],
+    references: [customers.id],
+  }),
   items: many(saleItems),
   movements: many(stockMovements),
+  payments: many(payments),
+}));
+
+// ============================================================================
+// PAYMENTS
+// ============================================================================
+export const payments = sqliteTable('payments', {
+  id: text('id').primaryKey(),
+  saleId: text('sale_id')
+    .notNull()
+    .references(() => sales.id, { onDelete: 'cascade' }),
+  customerId: text('customer_id').references(() => customers.id),
+  amount: real('amount').notNull(),
+  paymentMethod: text('payment_method', { 
+    enum: ['cash', 'card', 'bank_transfer', 'mobile', 'check', 'other'] 
+  }).default('cash'),
+  reference: text('reference'),
+  notes: text('notes'),
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  sale: one(sales, {
+    fields: [payments.saleId],
+    references: [sales.id],
+  }),
+  customer: one(customers, {
+    fields: [payments.customerId],
+    references: [customers.id],
+  }),
+  createdByUser: one(users, {
+    fields: [payments.createdBy],
+    references: [users.id],
+  }),
 }));
 
 // ============================================================================
@@ -495,6 +569,12 @@ export type NewSale = typeof sales.$inferInsert;
 
 export type SaleItem = typeof saleItems.$inferSelect;
 export type NewSaleItem = typeof saleItems.$inferInsert;
+
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
+
+export type Payment = typeof payments.$inferSelect;
+export type NewPayment = typeof payments.$inferInsert;
 
 // ============================================================================
 // USERS
@@ -618,3 +698,65 @@ export const zakatHistory = sqliteTable('zakat_history', {
 
 export type ZakatHistory = typeof zakatHistory.$inferSelect;
 export type NewZakatHistory = typeof zakatHistory.$inferInsert;
+
+// ============================================================================
+// EXPENSE CATEGORIES
+// ============================================================================
+export const expenseCategories = sqliteTable('expense_categories', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  color: text('color').default('#6B7280'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const expenseCategoriesRelations = relations(expenseCategories, ({ many }) => ({
+  expenses: many(expenses),
+}));
+
+// ============================================================================
+// EXPENSES
+// ============================================================================
+export const expenses = sqliteTable('expenses', {
+  id: text('id').primaryKey(),
+  categoryId: text('category_id').references(() => expenseCategories.id),
+  description: text('description').notNull(),
+  amount: real('amount').notNull(),
+  date: integer('date', { mode: 'timestamp' }).notNull(),
+  paymentMethod: text('payment_method', { 
+    enum: ['cash', 'card', 'bank_transfer', 'mobile', 'check', 'other'] 
+  }).default('cash'),
+  reference: text('reference'),
+  notes: text('notes'),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  category: one(expenseCategories, {
+    fields: [expenses.categoryId],
+    references: [expenseCategories.id],
+  }),
+  createdByUser: one(users, {
+    fields: [expenses.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export type ExpenseCategory = typeof expenseCategories.$inferSelect;
+export type NewExpenseCategory = typeof expenseCategories.$inferInsert;
+
+export type Expense = typeof expenses.$inferSelect;
+export type NewExpense = typeof expenses.$inferInsert;

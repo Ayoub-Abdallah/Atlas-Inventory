@@ -1,24 +1,30 @@
-import { sql, eq, desc, gte } from 'drizzle-orm';
+import { sql, eq, desc } from 'drizzle-orm';
 
 export default defineEventHandler(async () => {
   const db = useDB();
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoSec = Math.floor(thirtyDaysAgo.getTime() / 1000);
+
+  console.log('[dashboard/charts] 30 days ago:', thirtyDaysAgo.toISOString(), 'seconds:', thirtyDaysAgoSec);
 
   const movementsByDay = await db
     .select({
-      date: sql<string>`date(${tables.stockMovements.createdAt} / 1000, 'unixepoch')`,
+      // treat createdAt as seconds since epoch in SQL
+      date: sql<string>`date(${tables.stockMovements.createdAt}, 'unixepoch')`,
       type: tables.stockMovements.type,
       totalQuantity: sql<number>`SUM(ABS(${tables.stockMovements.quantity}))`,
     })
     .from(tables.stockMovements)
-    .where(gte(tables.stockMovements.createdAt, thirtyDaysAgo))
+    .where(sql`${tables.stockMovements.createdAt} >= ${thirtyDaysAgoSec}`)
     .groupBy(
-      sql`date(${tables.stockMovements.createdAt} / 1000, 'unixepoch')`,
+      sql`date(${tables.stockMovements.createdAt}, 'unixepoch')`,
       tables.stockMovements.type
     )
-    .orderBy(sql`date(${tables.stockMovements.createdAt} / 1000, 'unixepoch')`);
+    .orderBy(sql`date(${tables.stockMovements.createdAt}, 'unixepoch')`);
+
+  console.log('[dashboard/charts] movementsByDay:', movementsByDay.length, 'rows');
 
   const movementsChartData = processMovementsByDay(movementsByDay);
 
@@ -40,6 +46,8 @@ export default defineEventHandler(async () => {
       tables.categories.name,
       tables.categories.color
     );
+
+  console.log('[dashboard/charts] productsByCategory:', productsByCategory.length, 'rows');
 
   const topProductsByValue = await db
     .select({
@@ -83,7 +91,7 @@ export default defineEventHandler(async () => {
       totalQuantity: sql<number>`SUM(ABS(${tables.stockMovements.quantity}))`,
     })
     .from(tables.stockMovements)
-    .where(gte(tables.stockMovements.createdAt, thirtyDaysAgo))
+    .where(sql`${tables.stockMovements.createdAt} >= ${thirtyDaysAgoSec}`)
     .groupBy(tables.stockMovements.type);
 
   return {
@@ -112,10 +120,13 @@ function processMovementsByDay(
   for (const m of movements) {
     if (dateMap.has(m.date)) {
       const existing = dateMap.get(m.date)!;
-      if (m.type === 'in') {
-        existing.in = m.totalQuantity;
-      } else if (m.type === 'out') {
-        existing.out = m.totalQuantity;
+      // Categorize based on type AND quantity sign
+      // 'in' and 'return' are stock in (positive quantities)
+      // 'out', 'sale', and negative adjustments are stock out
+      if (m.type === 'in' || m.type === 'return' || (m.type === 'adjustment' && m.totalQuantity > 0)) {
+        existing.in += m.totalQuantity;
+      } else if (m.type === 'out' || m.type === 'sale' || (m.type === 'adjustment' && m.totalQuantity < 0)) {
+        existing.out += m.totalQuantity;
       }
     }
   }

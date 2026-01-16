@@ -40,11 +40,30 @@ const db = new Database(dbPath);
 
 // Enable WAL mode
 db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.pragma('foreign_keys = OFF'); // Temporarily disable for migrations
 
 console.log('[Init] Running migrations...');
 
-// Create all tables
+// Create customers table first (needed for sales FK)
+db.exec(`
+  -- Customers (create early for FK references)
+  CREATE TABLE IF NOT EXISTS customers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    address TEXT,
+    city TEXT,
+    notes TEXT,
+    credit_limit REAL DEFAULT 0,
+    current_balance REAL DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at INTEGER,
+    updated_at INTEGER
+  );
+`);
+
+// Create all other tables
 db.exec(`
   -- Taxes
   CREATE TABLE IF NOT EXISTS taxes (
@@ -219,10 +238,14 @@ db.exec(`
     invoice_number TEXT,
     supplier_id TEXT,
     user_id TEXT,
+    customer_id TEXT,
     status TEXT NOT NULL DEFAULT 'draft',
+    payment_status TEXT NOT NULL DEFAULT 'unpaid',
     total_amount REAL NOT NULL DEFAULT 0,
     total_cost REAL DEFAULT 0,
     tax_amount REAL DEFAULT 0,
+    paid_amount REAL DEFAULT 0,
+    due_date INTEGER,
     client_name TEXT,
     client_info TEXT,
     notes TEXT,
@@ -231,7 +254,8 @@ db.exec(`
     created_at INTEGER,
     updated_at INTEGER,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
   );
 
   -- Sale Items
@@ -311,10 +335,99 @@ db.exec(`
     updated_at INTEGER
   );
 
+  -- Customers (already created above, kept for reference)
+  -- CREATE TABLE IF NOT EXISTS customers ...
+
+  -- Payments
+  CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY,
+    sale_id TEXT NOT NULL,
+    customer_id TEXT,
+    amount REAL NOT NULL,
+    payment_method TEXT DEFAULT 'cash',
+    reference TEXT,
+    notes TEXT,
+    created_by TEXT,
+    created_at INTEGER,
+    FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  );
+
+  -- Expense Categories
+  CREATE TABLE IF NOT EXISTS expense_categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    color TEXT DEFAULT '#6B7280',
+    is_active INTEGER DEFAULT 1,
+    created_at INTEGER,
+    updated_at INTEGER
+  );
+
+  -- Expenses
+  CREATE TABLE IF NOT EXISTS expenses (
+    id TEXT PRIMARY KEY,
+    category_id TEXT,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    date INTEGER NOT NULL,
+    payment_method TEXT DEFAULT 'cash',
+    reference TEXT,
+    notes TEXT,
+    is_recurring INTEGER DEFAULT 0,
+    created_by TEXT,
+    created_at INTEGER,
+    updated_at INTEGER,
+    FOREIGN KEY (category_id) REFERENCES expense_categories(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  );
+
   -- Insert default settings if not exists
   INSERT OR IGNORE INTO settings (id) VALUES (1);
   INSERT OR IGNORE INTO zakat_settings (id) VALUES (1);
 `);
+
+// Add missing columns to sales table if they don't exist
+const addColumnIfNotExists = (tableName, columnName, columnDef) => {
+  try {
+    const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+    const exists = columns.some(c => c.name === columnName);
+    if (!exists) {
+      db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);
+      console.log(`[Init] Added column ${columnName} to ${tableName}`);
+    }
+  } catch (e) {
+    console.log(`[Init] Note: Could not add ${columnName} to ${tableName}: ${e.message}`);
+  }
+};
+
+// Add missing columns to sales table
+addColumnIfNotExists('sales', 'customer_id', 'TEXT');
+addColumnIfNotExists('sales', 'payment_status', "TEXT DEFAULT 'paid'");
+addColumnIfNotExists('sales', 'paid_amount', 'REAL DEFAULT 0');
+addColumnIfNotExists('sales', 'due_date', 'INTEGER');
+
+// Now create indexes (after columns exist)
+const createIndexSafe = (sql) => {
+  try {
+    db.exec(sql);
+  } catch (e) {
+    // Index may already exist, ignore
+  }
+};
+
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_payments_sale_id ON payments(sale_id)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_payments_customer_id ON payments(customer_id)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_sales_customer_id ON sales(customer_id)');
+createIndexSafe('CREATE INDEX IF NOT EXISTS idx_sales_payment_status ON sales(payment_status)');
+
+// Re-enable foreign keys
+db.pragma('foreign_keys = ON');
 
 console.log('[Init] Migrations completed!');
 

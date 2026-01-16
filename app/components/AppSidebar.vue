@@ -12,6 +12,8 @@ const navigation = computed(() => [
   { name: t('nav.suppliers'), href: '/suppliers', icon: 'lucide:truck' },
   { name: t('nav.movements'), href: '/movements', icon: 'lucide:arrow-left-right' },
   { name: t('nav.sales'), href: '/sales', icon: 'lucide:receipt' },
+  { name: t('nav.credit'), href: '/credit', icon: 'lucide:credit-card' },
+  { name: t('nav.expenses'), href: '/expenses', icon: 'lucide:wallet' },
   { name: t('nav.finance'), href: '/finance', icon: 'lucide:chart-line' },
 ]);
 

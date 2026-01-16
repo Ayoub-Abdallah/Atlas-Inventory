@@ -1,4 +1,4 @@
-import { and, gte, lte, eq, sql, desc } from 'drizzle-orm';
+import { and, gte, lte, eq, sql, desc, ne } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
   const db = useDB();
@@ -43,6 +43,18 @@ export default defineEventHandler(async (event) => {
         },
       },
       supplier: true,
+      customer: true,
+    },
+  });
+
+  // Get expenses within date range
+  const expensesData = await db.query.expenses.findMany({
+    where: and(
+      gte(tables.expenses.date, fromDate),
+      lte(tables.expenses.date, toDate)
+    ),
+    with: {
+      category: true,
     },
   });
 
@@ -53,6 +65,46 @@ export default defineEventHandler(async (event) => {
   const grossProfit = totalRevenue - totalCost;
   const numberOfSales = salesData.length;
   const avgOrderValue = numberOfSales > 0 ? totalRevenue / numberOfSales : 0;
+
+  // Calculate actual income (only paid amounts) and pending receivables
+  const actualIncome = salesData.reduce((sum, s) => sum + (s.paidAmount || 0), 0);
+  const pendingReceivables = salesData.reduce(
+    (sum, s) => sum + ((s.totalAmount || 0) - (s.paidAmount || 0)),
+    0
+  );
+
+  // Calculate total expenses
+  const totalExpenses = expensesData.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // Calculate net profit (actual income - cost of goods sold - operational expenses)
+  const netProfit = actualIncome - totalCost - totalExpenses;
+
+  // Get expenses by category
+  const expensesByCategory: Record<string, {
+    categoryId: string | null;
+    categoryName: string;
+    total: number;
+    count: number;
+  }> = {};
+
+  for (const expense of expensesData) {
+    const catId = expense.categoryId || 'uncategorized';
+    const catName = expense.category?.name || 'Uncategorized';
+    
+    if (!expensesByCategory[catId]) {
+      expensesByCategory[catId] = {
+        categoryId: expense.categoryId,
+        categoryName: catName,
+        total: 0,
+        count: 0,
+      };
+    }
+    expensesByCategory[catId].total += expense.amount;
+    expensesByCategory[catId].count += 1;
+  }
+
+  const expenseBreakdown = Object.values(expensesByCategory)
+    .sort((a, b) => b.total - a.total);
 
   // Calculate top products by revenue
   const productRevenue: Record<string, { 
@@ -126,12 +178,22 @@ export default defineEventHandler(async (event) => {
     .map(s => ({
       id: s.id,
       totalAmount: s.totalAmount,
+      paidAmount: s.paidAmount,
+      paymentStatus: s.paymentStatus,
       taxAmount: s.taxAmount,
       status: s.status,
       createdAt: s.createdAt,
       supplierName: s.supplier?.name,
+      customerName: s.customer?.name || s.clientName,
       itemCount: s.items.length,
     }));
+
+  // Get sales by payment status
+  const salesByPaymentStatus = {
+    paid: salesData.filter(s => s.paymentStatus === 'paid').length,
+    partial: salesData.filter(s => s.paymentStatus === 'partial').length,
+    unpaid: salesData.filter(s => s.paymentStatus === 'unpaid').length,
+  };
 
   return {
     period: {
@@ -142,12 +204,18 @@ export default defineEventHandler(async (event) => {
       totalRevenue,
       totalCost,
       grossProfit,
+      actualIncome,
+      pendingReceivables,
+      totalExpenses,
+      netProfit,
       taxesCollected: totalTax,
       numberOfSales,
       avgOrderValue,
     },
+    salesByPaymentStatus,
     topProducts,
     topSuppliers,
+    expenseBreakdown,
     recentSales,
   };
 });

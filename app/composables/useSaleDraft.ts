@@ -165,7 +165,8 @@ export function useSaleDraft() {
 
   const taxAmount = taxTotal; // Alias
 
-  const total = computed(() => subtotal.value + taxTotal.value);
+  // Total is just subtotal - no automatic tax added
+  const total = computed(() => subtotal.value);
 
   const totalCost = computed(() =>
     draft.value.items.reduce((sum, item) => 
@@ -235,6 +236,34 @@ export function useSaleDraft() {
     }
   };
 
+  // Update unit price by productId and variantId (for discounts)
+  const updateItemPrice = (productId: string, variantId: string | null, newPrice: number) => {
+    const index = draft.value.items.findIndex(
+      i => i.productId === productId && (i.variantId || null) === variantId
+    );
+    if (index >= 0) {
+      const item = draft.value.items[index];
+      if (item && newPrice > 0) {
+        item.unitPrice = newPrice;
+        item.lineTotal = item.quantity * newPrice;
+        saveDraft();
+      }
+    }
+  };
+
+  // Update unit price by item id
+  const updateItemPriceById = (itemId: string, newPrice: number) => {
+    const index = draft.value.items.findIndex(i => i.id === itemId);
+    if (index >= 0) {
+      const item = draft.value.items[index];
+      if (item && newPrice > 0) {
+        item.unitPrice = newPrice;
+        item.lineTotal = item.quantity * newPrice;
+        saveDraft();
+      }
+    }
+  };
+
   // Initialize on mount
   onMounted(() => {
     loadDraft();
@@ -251,6 +280,8 @@ export function useSaleDraft() {
     addItem,
     updateItemQuantity,
     updateQuantity,
+    updateItemPrice,
+    updateItemPriceById,
     removeItem,
     removeItemByProduct,
     // Supplier operations

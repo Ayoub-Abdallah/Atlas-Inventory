@@ -13,11 +13,15 @@ const saleId = route.params.id as string;
 // Fetch sale details
 const { data: sale, pending, error } = await useFetch(`/api/sales/${saleId}`);
 
+// Fetch settings for currency
+const { data: settings } = await useFetch('/api/settings');
+const currency = computed(() => settings.value?.currency || 'DZD');
+
 // Format currency
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'EUR',
+    currency: currency.value,
   }).format(value);
 };
 
