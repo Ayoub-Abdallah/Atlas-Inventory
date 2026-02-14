@@ -1,4 +1,4 @@
-import { and, gte, lte, eq, sql, desc, ne } from 'drizzle-orm';
+import { and, or, gte, lte, eq, ne, sql, desc } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
   const db = useDB();
@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
   // Parse date range
   const from = query.from as string;
   const to = query.to as string;
+  const sourceFilter = query.source as string | undefined; // 'product', 'reparation', or undefined for all
 
   let fromDate: Date;
   let toDate: Date;
@@ -29,8 +30,8 @@ export default defineEventHandler(async (event) => {
   fromDate.setHours(0, 0, 0, 0);
   toDate.setHours(23, 59, 59, 999);
 
-  // Get confirmed sales within date range
-  const salesData = await db.query.sales.findMany({
+  // Get confirmed sales within date range (skip if filtering reparation only)
+  const salesData = sourceFilter === 'reparation' ? [] : await db.query.sales.findMany({
     where: and(
       eq(tables.sales.status, 'confirmed'),
       gte(tables.sales.createdAt, fromDate),
@@ -47,6 +48,32 @@ export default defineEventHandler(async (event) => {
     },
   });
 
+  // Get all non-draft/non-cancelled reparations within date range (skip if filtering product only)
+  const reparationsData = sourceFilter === 'product' ? [] : await db.query.reparations.findMany({
+    where: and(
+      ne(tables.reparations.status, 'draft'),
+      ne(tables.reparations.status, 'cancelled'),
+      gte(tables.reparations.createdAt, fromDate),
+      lte(tables.reparations.createdAt, toDate)
+    ),
+    with: {
+      customer: true,
+      items: true,
+    },
+  });
+
+  // Get processed returns within date range (skip if filtering reparation only)
+  const returnsData = sourceFilter === 'reparation' ? [] : await db.query.saleReturns.findMany({
+    where: and(
+      eq(tables.saleReturns.status, 'processed'),
+      gte(tables.saleReturns.createdAt, fromDate),
+      lte(tables.saleReturns.createdAt, toDate)
+    ),
+    with: {
+      items: true,
+    },
+  });
+
   // Get expenses within date range
   const expensesData = await db.query.expenses.findMany({
     where: and(
@@ -59,19 +86,43 @@ export default defineEventHandler(async (event) => {
   });
 
   // Calculate aggregated metrics
-  const totalRevenue = salesData.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
-  const totalCost = salesData.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+  const salesRevenue = salesData.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+  const salesCost = salesData.reduce((sum, s) => sum + (s.totalCost || 0), 0);
   const totalTax = salesData.reduce((sum, s) => sum + (s.taxAmount || 0), 0);
+  
+  // Calculate reparations revenue and profit
+  const reparationsRevenue = reparationsData.reduce((sum, r) => sum + (r.price || 0), 0);
+  const reparationsCost = reparationsData.reduce((sum, r) => sum + (r.totalCost || 0), 0);
+  const reparationsProfit = reparationsRevenue - reparationsCost;
+  
+  // Calculate returns impact (negative revenue/cost)
+  const returnsRevenue = returnsData.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
+  const returnsCost = returnsData.reduce((sum, r) => sum + (r.totalCost || 0), 0);
+  
+  // Adjusted totals accounting for returns
+  const totalRevenue = salesRevenue + reparationsRevenue - returnsRevenue;
+  const totalCost = salesCost + reparationsCost - returnsCost;
   const grossProfit = totalRevenue - totalCost;
+  
   const numberOfSales = salesData.length;
-  const avgOrderValue = numberOfSales > 0 ? totalRevenue / numberOfSales : 0;
+  const numberOfReparations = reparationsData.length;
+  const numberOfReturns = returnsData.length;
+  const avgOrderValue = numberOfSales > 0 ? salesRevenue / numberOfSales : 0;
 
   // Calculate actual income (only paid amounts) and pending receivables
-  const actualIncome = salesData.reduce((sum, s) => sum + (s.paidAmount || 0), 0);
-  const pendingReceivables = salesData.reduce(
+  const salesIncome = salesData.reduce((sum, s) => sum + (s.paidAmount || 0), 0);
+  const reparationsIncome = reparationsData.reduce((sum, r) => sum + (r.paidAmount || 0), 0);
+  const actualIncome = salesIncome + reparationsIncome;
+  
+  const salesReceivables = salesData.reduce(
     (sum, s) => sum + ((s.totalAmount || 0) - (s.paidAmount || 0)),
     0
   );
+  const reparationsReceivables = reparationsData.reduce(
+    (sum, r) => sum + ((r.price || 0) - (r.paidAmount || 0)),
+    0
+  );
+  const pendingReceivables = salesReceivables + reparationsReceivables;
 
   // Calculate total expenses
   const totalExpenses = expensesData.reduce((sum, e) => sum + (e.amount || 0), 0);
@@ -171,28 +222,49 @@ export default defineEventHandler(async (event) => {
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
 
-  // Get recent sales
-  const recentSales = salesData
-    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
-    .slice(0, 10)
-    .map(s => ({
-      id: s.id,
-      totalAmount: s.totalAmount,
-      paidAmount: s.paidAmount,
-      paymentStatus: s.paymentStatus,
-      taxAmount: s.taxAmount,
-      status: s.status,
-      createdAt: s.createdAt,
-      supplierName: s.supplier?.name,
-      customerName: s.customer?.name || s.clientName,
-      itemCount: s.items.length,
-    }));
+  // Get recent sales (merge product sales + reparations)
+  const recentProductSales = salesData.map(s => ({
+    id: s.id,
+    sourceType: 'product' as const,
+    totalAmount: s.totalAmount,
+    paidAmount: s.paidAmount,
+    paymentStatus: s.paymentStatus,
+    taxAmount: s.taxAmount,
+    status: s.status,
+    createdAt: s.createdAt,
+    supplierName: s.supplier?.name,
+    customerName: s.customer?.name || s.clientName,
+    itemCount: s.items.length,
+    reportedIssue: null as string | null,
+  }));
 
-  // Get sales by payment status
+  const recentReparationSales = reparationsData.map(r => ({
+    id: r.id,
+    sourceType: 'reparation' as const,
+    totalAmount: r.price || 0,
+    paidAmount: r.paidAmount || 0,
+    paymentStatus: r.paymentStatus || 'unpaid',
+    taxAmount: 0,
+    status: 'confirmed',
+    createdAt: r.createdAt,
+    supplierName: null as string | null,
+    customerName: r.customer?.name || null,
+    itemCount: (r.items || []).length,
+    reportedIssue: r.reportedIssue || null,
+  }));
+
+  const recentSales = [...recentProductSales, ...recentReparationSales]
+    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+    .slice(0, 10);
+
+  // Get sales by payment status (include reparations)
   const salesByPaymentStatus = {
-    paid: salesData.filter(s => s.paymentStatus === 'paid').length,
-    partial: salesData.filter(s => s.paymentStatus === 'partial').length,
-    unpaid: salesData.filter(s => s.paymentStatus === 'unpaid').length,
+    paid: salesData.filter(s => s.paymentStatus === 'paid').length
+      + reparationsData.filter(r => r.paymentStatus === 'paid').length,
+    partial: salesData.filter(s => s.paymentStatus === 'partial').length
+      + reparationsData.filter(r => r.paymentStatus === 'partial').length,
+    unpaid: salesData.filter(s => s.paymentStatus === 'unpaid').length
+      + reparationsData.filter(r => (r.paymentStatus || 'unpaid') === 'unpaid').length,
   };
 
   return {
@@ -210,7 +282,14 @@ export default defineEventHandler(async (event) => {
       netProfit,
       taxesCollected: totalTax,
       numberOfSales,
+      numberOfReparations,
+      numberOfReturns,
       avgOrderValue,
+      reparationsRevenue,
+      reparationsCost,
+      reparationsProfit,
+      returnsRevenue,
+      returnsCost,
     },
     salesByPaymentStatus,
     topProducts,

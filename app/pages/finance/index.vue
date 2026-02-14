@@ -12,6 +12,7 @@ const { t } = useI18n();
 const dateRange = ref('30d');
 const customFrom = ref('');
 const customTo = ref('');
+const sourceFilter = ref(''); // '', 'product', 'reparation'
 const isLoading = ref(true);
 
 // Add 'Today' to date range
@@ -22,7 +23,7 @@ todayStart.setHours(0, 0, 0, 0);
 const { data: summaryData, refresh: refreshSummary } = await useFetch('/api/finance/summary', {
   query: computed(() => {
     if (dateRange.value === 'custom' && customFrom.value && customTo.value) {
-      return { from: customFrom.value, to: customTo.value };
+      return { from: customFrom.value, to: customTo.value, ...(sourceFilter.value ? { source: sourceFilter.value } : {}) };
     }
     const now = new Date();
     let from = new Date();
@@ -42,20 +43,25 @@ const { data: summaryData, refresh: refreshSummary } = await useFetch('/api/fina
         break;
     }
     
-    return { from: from.toISOString().split('T')[0], to: now.toISOString().split('T')[0] };
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const toLocal = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return { from: toLocal(from), to: toLocal(now), ...(sourceFilter.value ? { source: sourceFilter.value } : {}) };
   }),
 });
 
 const { data: chartData, refresh: refreshCharts } = await useFetch('/api/finance/chart-data', {
   query: computed(() => {
+    const srcParam = sourceFilter.value ? { source: sourceFilter.value } : {};
     // Always include today in the range if 'today' is selected
     if (dateRange.value === 'today') {
       const now = new Date();
       const from = new Date();
       from.setHours(0, 0, 0, 0);
-      return { from: from.toISOString().split('T')[0], to: now.toISOString().split('T')[0] };
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const toLocal = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      return { from: toLocal(from), to: toLocal(now), ...srcParam };
     }
-    return { range: dateRange.value };
+    return { range: dateRange.value, ...srcParam };
   }),
 });
 
@@ -65,8 +71,8 @@ const currency = computed(() => settings.value?.currency || 'DZD');
 
 isLoading.value = false;
 
-// Watch date range changes
-watch(dateRange, () => {
+// Watch date range and source filter changes
+watch([dateRange, sourceFilter], () => {
   if (dateRange.value !== 'custom') {
     refreshSummary();
     refreshCharts();
@@ -303,6 +309,16 @@ const dateParams = computed(() => {
       </div>
       
       <div class="flex items-center gap-3">
+        <!-- Source Type Filter -->
+        <select
+          v-model="sourceFilter"
+          class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">{{ t('sales.all_types') }}</option>
+          <option value="product">{{ t('sales.product_sales') }}</option>
+          <option value="reparation">{{ t('sales.reparation_sales') }}</option>
+        </select>
+
         <!-- Date Range Selector -->
         <select
           v-model="dateRange"
@@ -411,6 +427,40 @@ const dateParams = computed(() => {
         icon="lucide:receipt"
         icon-color="default"
       />
+    </div>
+
+    <!-- Reparation Metrics Row -->
+    <div v-if="(summaryData?.summary?.numberOfReparations || 0) > 0" class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <Icon name="lucide:wrench" class="h-4 w-4 text-indigo-600" />
+        <h3 class="font-semibold text-gray-900">{{ t('finance.reparations_overview') }}</h3>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="text-center p-4 bg-indigo-50 rounded-lg">
+          <p class="text-2xl font-bold text-indigo-600 font-mono">
+            {{ summaryData?.summary?.numberOfReparations || 0 }}
+          </p>
+          <p class="text-sm text-indigo-700">{{ t('finance.reparations_count') }}</p>
+        </div>
+        <div class="text-center p-4 bg-indigo-50 rounded-lg">
+          <p class="text-2xl font-bold text-indigo-600 font-mono">
+            {{ formatCurrency(summaryData?.summary?.reparationsRevenue || 0) }}
+          </p>
+          <p class="text-sm text-indigo-700">{{ t('finance.reparations_revenue') }}</p>
+        </div>
+        <div class="text-center p-4 bg-indigo-50 rounded-lg">
+          <p class="text-2xl font-bold text-indigo-600 font-mono">
+            {{ formatCurrency(summaryData?.summary?.reparationsCost || 0) }}
+          </p>
+          <p class="text-sm text-indigo-700">{{ t('finance.reparations_cost') }}</p>
+        </div>
+        <div class="text-center p-4 rounded-lg" :class="(summaryData?.summary?.reparationsProfit || 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'">
+          <p class="text-2xl font-bold font-mono" :class="(summaryData?.summary?.reparationsProfit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'">
+            {{ formatCurrency(summaryData?.summary?.reparationsProfit || 0) }}
+          </p>
+          <p class="text-sm" :class="(summaryData?.summary?.reparationsProfit || 0) >= 0 ? 'text-emerald-700' : 'text-red-700'">{{ t('finance.reparations_profit') }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- Payment Status Overview -->
@@ -539,6 +589,7 @@ const dateParams = computed(() => {
         <table class="w-full">
           <thead>
             <tr class="text-left text-xs text-gray-500 uppercase border-b">
+              <th class="pb-3 font-medium">{{ t('sales.type') }}</th>
               <th class="pb-3 font-medium">{{ t('sales.sale_date') }}</th>
               <th class="pb-3 font-medium">{{ t('sales.customer') }}</th>
               <th class="pb-3 font-medium text-right">{{ t('sales.total') }}</th>
@@ -551,8 +602,25 @@ const dateParams = computed(() => {
             <tr
               v-for="sale in summaryData?.recentSales"
               :key="sale.id"
-              class="text-sm"
+              class="text-sm hover:bg-gray-50 cursor-pointer"
+              @click="navigateTo(sale.sourceType === 'reparation' ? `/reparations/${sale.id}` : `/sales/${sale.id}`)"
             >
+              <td class="py-3">
+                <span
+                  v-if="sale.sourceType === 'reparation'"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                >
+                  <Icon name="lucide:wrench" class="h-3 w-3" />
+                  {{ t('sales.reparation') }}
+                </span>
+                <span
+                  v-else
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                >
+                  <Icon name="lucide:package" class="h-3 w-3" />
+                  {{ t('sales.product') }}
+                </span>
+              </td>
               <td class="py-3 text-gray-900">
                 {{ formatDate(sale.createdAt) }}
               </td>

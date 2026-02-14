@@ -124,6 +124,51 @@ const ui = {
       >
         <div class="flex justify-between items-start">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            {{ t('dashboard.total_revenue') }}
+          </p>
+          <Icon name="lucide:trending-up" class="h-4 w-4 text-indigo-500" />
+        </div>
+        <div class="mt-2">
+          <span class="text-2xl font-bold text-gray-900 font-mono">{{
+            formatCurrency(stats?.totalRevenue ?? 0)
+          }}</span>
+          <div class="mt-1 flex items-center gap-3 text-[11px]">
+            <span class="text-gray-500">{{ t('dashboard.products_label') }}: {{ formatCurrency(stats?.salesRevenue ?? 0) }}</span>
+            <span class="text-indigo-500">{{ t('dashboard.reparations_label') }}: {{ formatCurrency(stats?.reparationRevenue ?? 0) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors"
+        :class="{
+          'border-emerald-200 bg-emerald-50/30': (stats?.totalProfit ?? 0) > 0,
+          'border-red-200 bg-red-50/30': (stats?.totalProfit ?? 0) < 0,
+        }"
+      >
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            {{ t('dashboard.total_profit') }}
+          </p>
+          <Icon name="lucide:wallet" class="h-4 w-4" :class="(stats?.totalProfit ?? 0) >= 0 ? 'text-emerald-500' : 'text-red-500'" />
+        </div>
+        <div class="mt-2">
+          <span class="text-2xl font-bold font-mono" :class="(stats?.totalProfit ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-700'">{{
+            formatCurrency(stats?.totalProfit ?? 0)
+          }}</span>
+          <div class="mt-1 flex items-center gap-3 text-[11px]">
+            <span class="text-gray-500">{{ t('dashboard.products_label') }}: {{ formatCurrency(stats?.salesProfit ?? 0) }}</span>
+            <span class="text-indigo-500">{{ t('dashboard.reparations_label') }}: {{ formatCurrency(stats?.reparationProfit ?? 0) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reparations Summary Row -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
             {{ t('dashboard.total_suppliers') }}
           </p>
           <Icon name="lucide:truck" class="h-4 w-4 text-gray-400" />
@@ -135,18 +180,47 @@ const ui = {
         </div>
       </div>
 
-      <div
-        class="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors"
-      >
+      <div class="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors">
         <div class="flex justify-between items-start">
           <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {{ t('finance.revenue') }}
+            {{ t('dashboard.active_reparations') }}
           </p>
-          <Icon name="lucide:euro" class="h-4 w-4 text-gray-400" />
+          <Icon name="lucide:wrench" class="h-4 w-4 text-blue-500" />
+        </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-2xl font-bold text-gray-900 font-mono">{{
+            stats?.activeReparations ?? 0
+          }}</span>
+          <span v-if="(stats?.activeReparations ?? 0) > 0" class="text-xs font-medium text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+            {{ t('dashboard.in_progress') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            {{ t('dashboard.completed_reparations') }}
+          </p>
+          <Icon name="lucide:check-circle" class="h-4 w-4 text-emerald-500" />
         </div>
         <div class="mt-2">
           <span class="text-2xl font-bold text-gray-900 font-mono">{{
-            formatCurrency(stats?.totalStockValue ?? 0)
+            stats?.completedReparations ?? 0
+          }}</span>
+        </div>
+      </div>
+
+      <div class="p-5 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors">
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            {{ t('dashboard.reparation_revenue') }}
+          </p>
+          <Icon name="lucide:banknote" class="h-4 w-4 text-indigo-500" />
+        </div>
+        <div class="mt-2">
+          <span class="text-2xl font-bold text-gray-900 font-mono">{{
+            formatCurrency(stats?.reparationRevenue ?? 0)
           }}</span>
         </div>
       </div>

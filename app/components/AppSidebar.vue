@@ -2,20 +2,29 @@
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
-const { user, isAdmin, logout } = useAuth();
+const { user, isAdmin, canEdit, logout } = useAuth();
 
-const navigation = computed(() => [
-  { name: t('nav.dashboard'), href: '/', icon: 'lucide:layout-dashboard' },
-  { name: t('nav.scan'), href: '/stock/scan', icon: 'lucide:scan-barcode' },
-  { name: t('nav.products'), href: '/products', icon: 'lucide:package' },
-  { name: t('nav.categories'), href: '/categories', icon: 'lucide:folder-tree' },
-  { name: t('nav.suppliers'), href: '/suppliers', icon: 'lucide:truck' },
-  { name: t('nav.movements'), href: '/movements', icon: 'lucide:arrow-left-right' },
-  { name: t('nav.sales'), href: '/sales', icon: 'lucide:receipt' },
-  { name: t('nav.credit'), href: '/credit', icon: 'lucide:credit-card' },
-  { name: t('nav.expenses'), href: '/expenses', icon: 'lucide:wallet' },
-  { name: t('nav.finance'), href: '/finance', icon: 'lucide:chart-line' },
-]);
+const navigation = computed(() => {
+  const items: Array<{ name: string; href: string; icon: string }> = [
+    { name: t('nav.dashboard'), href: '/', icon: 'lucide:layout-dashboard' },
+    { name: t('nav.scan'), href: '/stock/scan', icon: 'lucide:scan-barcode' },
+    { name: t('nav.products'), href: '/products', icon: 'lucide:package' },
+    { name: t('nav.categories'), href: '/categories', icon: 'lucide:folder-tree' },
+    { name: t('nav.suppliers'), href: '/suppliers', icon: 'lucide:truck' },
+    { name: t('nav.movements'), href: '/movements', icon: 'lucide:arrow-left-right' },
+    { name: t('nav.sales'), href: '/sales', icon: 'lucide:receipt' },
+    { name: t('nav.credit'), href: '/credit', icon: 'lucide:credit-card' },
+    { name: t('nav.expenses'), href: '/expenses', icon: 'lucide:wallet' },
+    { name: t('nav.finance'), href: '/finance', icon: 'lucide:chart-line' },
+  ];
+
+  // Show reparations link to users with edit permissions (admin/member)
+  if (canEdit?.value) {
+    items.splice(6, 0, { name: t('nav.reparations'), href: '/reparations', icon: 'lucide:wrench' });
+  }
+
+  return items;
+});
 
 const secondaryNavigation = computed(() => {
   const items = [

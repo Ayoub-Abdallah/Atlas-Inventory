@@ -200,3 +200,47 @@ html[dir="rtl"] {
     scrollbar-width: none;
   }
 }
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+@media print {
+  /* Reset page layout */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    font-size: 12pt !important;
+  }
+
+  /* Reset the layout container */
+  .layout-container {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Content area should not be constrained */
+  main {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Remove shadows, borders, and backgrounds for a clean print */
+  .shadow-sm, .shadow, .shadow-md, .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  /* Ensure color printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page margin settings */
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+}

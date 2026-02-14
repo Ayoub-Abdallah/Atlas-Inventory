@@ -112,7 +112,7 @@ function processMovementsByDay(
   for (let i = 13; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     dates.push(dateStr);
     dateMap.set(dateStr, { in: 0, out: 0 });
   }

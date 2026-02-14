@@ -1,4 +1,4 @@
-import { desc, eq, and, gte, lte, or, like, sql } from 'drizzle-orm';
+import { desc, eq, ne, and, gte, lte, or, like, sql } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
   const db = useDB();
@@ -7,29 +7,16 @@ export default defineEventHandler(async (event) => {
   const startDate = query.startDate as string | undefined;
   const endDate = query.endDate as string | undefined;
   const search = query.search as string | undefined;
+  const sourceFilter = query.source as string | undefined; // 'product', 'reparation', or undefined for all
 
-  // Build where conditions
-  const conditions = [];
-
-  // Date filtering using UTC to avoid timezone issues
-  if (startDate) {
-    const fromDate = new Date(startDate + 'T00:00:00.000Z');
-    const fromMs = fromDate.getTime();
-    // Helper to convert stored createdAt to milliseconds
-    const toMsTimestamp = (val: any) => {
-      if (!val) return 0;
-      if (val instanceof Date) return val.getTime();
-      const n = typeof val === 'string' ? Number(val) : val;
-      if (Number.isNaN(n)) return 0;
-      return n < 1e12 ? n * 1000 : n;
-    };
-    // We'll filter in JS since the column might store seconds or ms
-  }
-
-  if (endDate) {
-    const toDate = new Date(endDate + 'T00:00:00.000Z');
-    toDate.setUTCDate(toDate.getUTCDate() + 1); // Include the end date
-  }
+  // Helper: convert stored createdAt to milliseconds reliably
+  const toMsTimestamp = (val: any) => {
+    if (!val) return 0;
+    if (val instanceof Date) return val.getTime();
+    const n = typeof val === 'string' ? Number(val) : val;
+    if (Number.isNaN(n)) return 0;
+    return n < 1e12 ? n * 1000 : n;
+  };
 
   // Fetch all sales first
   let salesList = await db.query.sales.findMany({
@@ -47,49 +34,104 @@ export default defineEventHandler(async (event) => {
     },
   });
 
+  // Normalize sales records with sourceType
+  let combinedList: any[] = salesList.map((sale) => ({
+    ...sale,
+    sourceType: 'product',
+  }));
+
+  // Fetch all non-draft/non-cancelled reparations and merge as revenue records
+  if (sourceFilter !== 'product') {
+    const reparationsData = await db.query.reparations.findMany({
+      where: and(
+        ne(tables.reparations.status, 'draft'),
+        ne(tables.reparations.status, 'cancelled')
+      ),
+      with: {
+        customer: true,
+        items: true,
+        handler: true,
+      },
+    });
+
+    const reparationRecords = reparationsData.map((rep: any) => ({
+      id: rep.id,
+      sourceType: 'reparation' as const,
+      status: 'confirmed', // Treat completed reparations as confirmed revenue
+      reparationStatus: rep.status,
+      createdAt: rep.createdAt,
+      updatedAt: rep.updatedAt,
+      totalAmount: rep.price || 0,
+      totalCost: rep.totalCost || 0,
+      taxAmount: 0,
+      paidAmount: rep.paidAmount || 0,
+      paymentStatus: rep.paymentStatus || 'unpaid',
+      customerId: rep.customerId,
+      customer: rep.customer,
+      supplier: null,
+      user: rep.handler,
+      items: (rep.items || []).map((item: any) => ({
+        ...item,
+        product: null,
+        variant: null,
+        lineTotal: item.lineTotal || (item.unitCost || 0) * (item.quantity || 0),
+      })),
+      reportedIssue: rep.reportedIssue,
+      isWarranty: rep.isWarranty,
+      partsCost: rep.partsCost,
+      laborCost: rep.laborCost,
+      price: rep.price,
+    }));
+
+    combinedList = [...combinedList, ...reparationRecords];
+  }
+
+  // Filter by source type
+  if (sourceFilter === 'product') {
+    combinedList = combinedList.filter((item) => item.sourceType === 'product');
+  } else if (sourceFilter === 'reparation') {
+    combinedList = combinedList.filter((item) => item.sourceType === 'reparation');
+  }
+
   // Filter by date in JS to handle seconds/milliseconds timestamp ambiguity
+  // Dates come as local date strings (YYYY-MM-DD), parse as local time boundaries
   if (startDate || endDate) {
-    const fromMs = startDate ? new Date(startDate + 'T00:00:00.000Z').getTime() : 0;
-    const toDate = endDate ? new Date(endDate + 'T00:00:00.000Z') : new Date();
-    if (endDate) toDate.setUTCDate(toDate.getUTCDate() + 1);
-    const toMs = toDate.getTime();
+    const fromMs = startDate ? new Date(startDate + 'T00:00:00').getTime() : 0;
+    const toMs = endDate ? new Date(endDate + 'T23:59:59.999').getTime() : Date.now();
 
-    const toMsTimestamp = (val: any) => {
-      if (!val) return 0;
-      if (val instanceof Date) return val.getTime();
-      const n = typeof val === 'string' ? Number(val) : val;
-      if (Number.isNaN(n)) return 0;
-      return n < 1e12 ? n * 1000 : n;
-    };
-
-    salesList = salesList.filter((sale) => {
-      const ts = toMsTimestamp(sale.createdAt);
-      return ts >= fromMs && ts < toMs;
+    combinedList = combinedList.filter((item) => {
+      const ts = toMsTimestamp(item.createdAt);
+      return ts >= fromMs && ts <= toMs;
     });
   }
 
-  // Filter by search (customer name, supplier name, sale ID, product names)
+  // Filter by search (customer name, supplier name, ID, product names, reported issue)
   if (search && search.trim()) {
     const searchLower = search.toLowerCase().trim();
-    salesList = salesList.filter((sale) => {
-      // Search in sale ID
-      if (sale.id.toLowerCase().includes(searchLower)) return true;
+    combinedList = combinedList.filter((item) => {
+      if (item.id.toLowerCase().includes(searchLower)) return true;
+      if (item.supplier?.name?.toLowerCase().includes(searchLower)) return true;
+      if (item.customer?.name?.toLowerCase().includes(searchLower)) return true;
       
-      // Search in supplier name
-      if (sale.supplier?.name?.toLowerCase().includes(searchLower)) return true;
+      if (item.sourceType === 'reparation') {
+        if (item.reportedIssue?.toLowerCase().includes(searchLower)) return true;
+      }
       
-      // Search in customer name
-      if (sale.customer?.name?.toLowerCase().includes(searchLower)) return true;
-      
-      // Search in product names
-      if (sale.items?.some((item: any) => 
-        item.product?.name?.toLowerCase().includes(searchLower) ||
-        item.variant?.name?.toLowerCase().includes(searchLower)
+      if (item.items?.some((it: any) => 
+        it.product?.name?.toLowerCase().includes(searchLower) ||
+        it.variant?.name?.toLowerCase().includes(searchLower)
       )) return true;
       
       return false;
     });
   }
 
-  return salesList;
+  // Sort by createdAt descending
+  combinedList.sort((a, b) => {
+    const tsA = toMsTimestamp(a.createdAt);
+    const tsB = toMsTimestamp(b.createdAt);
+    return tsB - tsA;
+  });
+
+  return combinedList;
 });

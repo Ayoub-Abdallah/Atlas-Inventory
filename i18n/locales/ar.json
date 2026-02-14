@@ -65,6 +65,7 @@
     "movements": "الحركات",
     "scan": "مسح وعمليات",
     "sales": "المبيعات",
+    "reparations": "الإصلاحات",
     "credit": "الائتمان والذمم",
     "expenses": "المصروفات",
     "finance": "المالية",
@@ -72,7 +73,12 @@
     "zakat": "الزكاة",
     "settings": "الإعدادات",
     "users": "المستخدمون",
-    "system": "النظام"
+    "system": "النظام",
+    "new": "جديد",
+    "edit": "تعديل",
+    "returns": "المرتجعات",
+    "draft": "مسودة",
+    "stock": "المخزون"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -98,7 +104,16 @@
     "quick_actions": "إجراءات سريعة",
     "add_product": "إضافة منتج",
     "add_movement": "إضافة حركة",
-    "view_reports": "عرض التقارير"
+    "view_reports": "عرض التقارير",
+    "total_revenue": "إجمالي الإيرادات",
+    "total_profit": "إجمالي الربح",
+    "active_reparations": "الإصلاحات النشطة",
+    "completed_reparations": "الإصلاحات المكتملة",
+    "reparation_revenue": "إيرادات الإصلاحات",
+    "reparation_profit": "ربح الإصلاحات",
+    "products_label": "المنتجات",
+    "reparations_label": "الإصلاحات",
+    "in_progress": "قيد التنفيذ"
   },
   "products": {
     "title": "المنتجات",
@@ -347,6 +362,7 @@
     "draft": "مسودة",
     "confirmed": "مؤكدة",
     "cancelled": "ملغاة",
+    "returned": "مُرجعة",
     "create_sale": "إنشاء عملية بيع",
     "edit_sale": "تعديل البيع",
     "view_sale": "عرض البيع",
@@ -418,7 +434,6 @@
     "thank_you": "شكراً لزيارتكم!",
     "select_variant_to_add": "اختر متغيراً لإضافته إلى السلة",
     "client": "العميل",
-    "sale_confirmed": "تم تأكيد البيع",
     "paid": "مدفوع",
     "partial": "جزئي",
     "unpaid": "غير مدفوع",
@@ -467,7 +482,14 @@
     "card": "بطاقة",
     "transfer": "تحويل بنكي",
     "due_date": "تاريخ الاستحقاق",
-    "search_placeholder": "البحث حسب العميل أو المورد أو المنتج أو معرف البيع..."
+    "search_placeholder": "البحث حسب العميل أو المورد أو المنتج أو معرف البيع...",
+    "balance": "الرصيد",
+    "type": "النوع",
+    "product": "منتج",
+    "reparation": "إصلاح",
+    "all_types": "كل الأنواع",
+    "product_sales": "مبيعات المنتجات",
+    "reparation_sales": "مبيعات الإصلاحات"
   },
   "finance": {
     "title": "المالية والتحليلات",
@@ -513,7 +535,13 @@
     "fully_paid": "مدفوع بالكامل",
     "partial_payments": "دفعات جزئية",
     "unpaid_sales": "مبيعات غير مدفوعة",
-    "view_credit_details": "عرض تفاصيل الائتمان"
+    "view_credit_details": "عرض تفاصيل الائتمان",
+    "pricing": "التسعير",
+    "reparations_overview": "إيرادات الإصلاحات",
+    "reparations_count": "الإصلاحات المكتملة",
+    "reparations_revenue": "الإيرادات",
+    "reparations_cost": "التكلفة",
+    "reparations_profit": "الربح"
   },
   "taxes": {
     "title": "الضرائب",
@@ -929,5 +957,201 @@
       "direct": "مباشرة للمستفيد",
       "other": "أخرى"
     }
+  },
+  "reparations": {
+    "title": "الإصلاحات",
+    "description": "إدارة إصلاحات المنتجات ومطالبات الضمان",
+    "create": "إصلاح جديد",
+    "edit": "تعديل الإصلاح",
+    "view": "عرض الإصلاح",
+    "delete": "حذف الإصلاح",
+    "no_reparations": "لا توجد إصلاحات",
+    "no_reparations_description": "لا توجد سجلات إصلاح بعد. ابدأ بإنشاء إصلاح جديد.",
+    "status": {
+      "draft": "مسودة",
+      "received": "مستلم",
+      "diagnosed": "مشخّص",
+      "in_progress": "قيد الإصلاح",
+      "completed": "مكتمل",
+      "returned": "مُرجع",
+      "cancelled": "ملغى"
+    },
+    "fields": {
+      "customer": "العميل",
+      "select_customer": "اختيار عميل (اختياري)",
+      "product": "المنتج/العنصر",
+      "select_product": "اختيار منتج (اختياري)",
+      "reported_issue": "المشكلة المبلغ عنها",
+      "reported_issue_placeholder": "وصف المشكلة أو طلب العميل",
+      "diagnosis": "التشخيص",
+      "diagnosis_placeholder": "التشخيص التقني والنتائج",
+      "repair_notes": "ملاحظات الإصلاح",
+      "repair_notes_placeholder": "تفاصيل أعمال الإصلاح المنجزة",
+      "parts": "القطع والمواد",
+      "parts_cost": "تكلفة القطع",
+      "labor_cost": "تكلفة العمل",
+      "total_cost": "التكلفة الإجمالية",
+      "deposit": "مبلغ العربون",
+      "price": "سعر العميل",
+      "price_hint": "يتم حسابه تلقائياً من التكلفة الإجمالية",
+      "price_manual": "تم التعيين يدوياً — انقر تلقائي لإعادة التعيين",
+      "reset_price": "إعادة التعيين إلى السعر المحسوب تلقائياً",
+      "is_warranty": "إصلاح تحت الضمان",
+      "payment_status": "حالة الدفع",
+      "paid_amount": "المبلغ المدفوع",
+      "handled_by": "بواسطة",
+      "received_date": "تاريخ الاستلام",
+      "returned_date": "تاريخ الإرجاع",
+      "closed_date": "تاريخ الإغلاق",
+      "add_part": "+ إضافة قطعة",
+      "part_name": "اسم القطعة / المنتج",
+      "quantity": "الكمية",
+      "unit_cost": "التكلفة الوحدوية",
+      "line_total": "إجمالي السطر",
+      "remove": "حذف",
+      "search_product": "البحث عن منتج أو إدخال اسم قطعة"
+    },
+    "actions": {
+      "mark_diagnosed": "تعيين كمشخّص",
+      "mark_in_progress": "بدء الإصلاح",
+      "mark_completed": "تعيين كمكتمل",
+      "mark_returned": "تعيين كمُرجع",
+      "mark_cancelled": "إلغاء الإصلاح",
+      "save_draft": "حفظ كمسودة",
+      "confirm_repair": "تأكيد الإصلاح",
+      "continue_editing": "متابعة التعديل",
+      "record_payment": "تسجيل دفعة",
+      "print_receipt": "طباعة الإيصال",
+      "update_status": "تحديث الحالة",
+      "close_reparation": "إغلاق الإصلاح"
+    },
+    "messages": {
+      "created": "تم إنشاء الإصلاح بنجاح",
+      "updated": "تم تحديث الإصلاح بنجاح",
+      "deleted": "تم حذف الإصلاح بنجاح",
+      "status_updated": "تم تحديث الحالة بنجاح",
+      "draft_saved": "تم حفظ المسودة بنجاح",
+      "draft_notice": "هذا الإصلاح مسودة",
+      "draft_notice_description": "لم يتم تأكيد هذا الإصلاح بعد. عدّله وأكّده عندما تكون جاهزاً.",
+      "created_and_paid": "تم إنشاء الإصلاح ودفع المبلغ",
+      "issue_required": "يرجى وصف المشكلة المبلغ عنها",
+      "confirm_delete": "هل أنت متأكد من حذف سجل الإصلاح هذا؟",
+      "confirm_cancel": "هل أنت متأكد من إلغاء هذا الإصلاح؟"
+    },
+    "filters": {
+      "all_statuses": "جميع الحالات",
+      "date_range": "الفترة الزمنية",
+      "search_placeholder": "البحث حسب العميل أو المشكلة أو المعرف..."
+    },
+    "payment": {
+      "unpaid": "غير مدفوع",
+      "partial": "جزئي",
+      "paid": "مدفوع",
+      "overpaid": "دفع زائد"
+    },
+    "summary": {
+      "total_reparations": "إجمالي الإصلاحات",
+      "drafts": "المسودات",
+      "active_repairs": "الإصلاحات النشطة",
+      "completed": "المكتملة",
+      "completed_today": "المكتملة اليوم",
+      "total_value": "القيمة الإجمالية",
+      "collected": "المحصّل",
+      "outstanding": "المستحق",
+      "revenue": "إيرادات الإصلاحات"
+    },
+    "payment_modal_title": "الدفع والتأكيد",
+    "immediate_payment": "الدفع الآن",
+    "immediate_payment_desc": "تم استلام الدفع كاملاً",
+    "credit_payment": "الدفع لاحقاً",
+    "credit_payment_desc": "جزئي أو غير مدفوع",
+    "full_payment_received": "تم استلام الدفع الكامل",
+    "partial_or_unpaid": "جزئي أو غير مدفوع",
+    "deposit_amount": "مبلغ العربون",
+    "payment_method": "طريقة الدفع",
+    "amount": "المبلغ",
+    "outstanding": "المبلغ المتبقي",
+    "confirm_and_pay": "تأكيد ودفع",
+    "confirm": "تأكيد"
+  },
+  "returns": {
+    "title": "المرتجعات والاسترداد",
+    "description": "إدارة مرتجعات المنتجات والمبالغ المستردة",
+    "create": "معالجة مرتجع",
+    "view": "عرض المرتجع",
+    "no_returns": "لا توجد مرتجعات",
+    "no_returns_description": "لم يتم العثور على سجلات مرتجعات",
+    "type": {
+      "partial": "مرتجع جزئي",
+      "full": "مرتجع كامل"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "processed": "تمت المعالجة",
+      "cancelled": "ملغى"
+    },
+    "fields": {
+      "sale": "البيع الأصلي",
+      "return_type": "نوع المرتجع",
+      "reason": "سبب الإرجاع",
+      "reason_placeholder": "لماذا يتم إرجاع هذا المنتج؟",
+      "items": "العناصر المرتجعة",
+      "restock": "إعادة التخزين",
+      "restock_help": "إضافة العناصر المرتجعة إلى المخزون",
+      "refund_amount": "مبلغ الاسترداد",
+      "refund_method": "طريقة الاسترداد",
+      "select_items": "اختيار العناصر للإرجاع",
+      "max_quantity": "الكمية القصوى",
+      "returned_qty": "الكمية المرتجعة",
+      "unit_price": "سعر الوحدة",
+      "total": "المجموع",
+      "quantity": "الكمية",
+      "refund_details": "تفاصيل الاسترداد",
+      "items_returned": "العناصر المرتجعة",
+      "calculated_refund": "الاسترداد المحسوب",
+      "editable": "قابل للتعديل",
+      "refund_info": "سيتم تسجيل الاسترداد في المالية وخصمه من الإيرادات.",
+      "select_one_item": "يرجى اختيار عنصر واحد على الأقل للإرجاع",
+      "success": "تمت معالجة المرتجع بنجاح",
+      "error": "خطأ في معالجة المرتجع"
+    },
+    "actions": {
+      "process_return": "معالجة المرتجع",
+      "issue_refund": "إصدار استرداد",
+      "cancel_return": "إلغاء المرتجع"
+    },
+    "messages": {
+      "processed": "تمت معالجة المرتجع بنجاح",
+      "refunded": "تم إصدار الاسترداد بنجاح",
+      "cancelled": "تم إلغاء المرتجع",
+      "confirm_process": "معالجة هذا المرتجع؟ سيتم تحديث المخزون والمالية.",
+      "confirm_refund": "إصدار استرداد لهذا المرتجع؟",
+      "already_returned": "تم إرجاع هذا البيع بالكامل بالفعل",
+      "invalid_quantity": "الكمية المرتجعة تتجاوز الكمية الأصلية"
+    },
+    "reasons": {
+      "defective": "منتج معيب",
+      "wrong_item": "عنصر خاطئ",
+      "not_needed": "لم يعد مطلوباً",
+      "damaged": "تالف أثناء النقل",
+      "other": "أخرى"
+    }
+  },
+  "filters": {
+    "today": "اليوم",
+    "30_days": "آخر 30 يوم",
+    "90_days": "آخر 90 يوم",
+    "1_year": "السنة الأخيرة",
+    "custom": "فترة مخصصة"
+  },
+  "payments": {
+    "title": "المدفوعات",
+    "amount": "المبلغ",
+    "method": "الطريقة",
+    "date": "التاريخ",
+    "reference": "المرجع",
+    "status": "حالة الدفع",
+    "record": "تسجيل دفعة",
+    "history": "سجل المدفوعات"
   }
 }

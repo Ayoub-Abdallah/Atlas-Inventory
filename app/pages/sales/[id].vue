@@ -11,7 +11,10 @@ const { showToast } = useToast();
 const saleId = route.params.id as string;
 
 // Fetch sale details
-const { data: sale, pending, error } = await useFetch(`/api/sales/${saleId}`);
+const { data: sale, pending, error, refresh } = await useFetch(`/api/sales/${saleId}`);
+
+// Fetch returns for this sale
+const { data: returns } = await useFetch(`/api/returns?saleId=${saleId}`);
 
 // Fetch settings for currency
 const { data: settings } = await useFetch('/api/settings');
@@ -54,6 +57,14 @@ const getStatusColor = (status: string) => {
 const printInvoice = () => {
   window.print();
 };
+
+// Return modal
+import ReturnForm from '../../components/returns/ReturnForm.vue';
+const openReturn = ref(false);
+async function onProcessed() {
+  // reload page data after processing
+  await refresh();
+}
 </script>
 
 <template>
@@ -68,12 +79,10 @@ const printInvoice = () => {
       <Icon name="lucide:alert-circle" class="h-12 w-12 text-red-400 mx-auto mb-4" />
       <h3 class="text-lg font-medium text-red-800 mb-2">{{ t('errors.sale_not_found') }}</h3>
       <p class="text-sm text-red-600 mb-4">{{ t('errors.sale_not_found_description') }}</p>
-      <NuxtLink to="/sales">
-        <UiButton variant="outline">
-          <Icon name="lucide:arrow-left" class="h-4 w-4 mr-2" />
-          {{ t('sales.back_to_sales') }}
-        </UiButton>
-      </NuxtLink>
+      <UiButton variant="outline" @click="navigateTo('/sales')">
+        <Icon name="lucide:arrow-left" class="h-4 w-4 mr-2" />
+        {{ t('sales.back_to_sales') }}
+      </UiButton>
     </div>
 
     <!-- Sale Details -->
@@ -81,11 +90,9 @@ const printInvoice = () => {
       <!-- Header -->
       <div class="flex items-center justify-between print:hidden">
         <div class="flex items-center gap-4">
-          <NuxtLink to="/sales">
-            <UiButton variant="ghost" size="sm">
-              <Icon name="lucide:arrow-left" class="h-4 w-4" />
-            </UiButton>
-          </NuxtLink>
+          <UiButton variant="ghost" size="sm" @click="navigateTo('/sales')">
+            <Icon name="lucide:arrow-left" class="h-4 w-4" />
+          </UiButton>
           <div>
             <h1 class="text-2xl font-bold text-gray-900">
               {{ t('sales.sale_details') }}
@@ -97,6 +104,10 @@ const printInvoice = () => {
           <UiButton variant="outline" @click="printInvoice">
             <Icon name="lucide:printer" class="h-4 w-4 mr-2" />
             {{ t('app.print') }}
+          </UiButton>
+          <UiButton @click="openReturn = true">
+            <Icon name="lucide:corner-down-left" class="h-4 w-4 mr-2" />
+            {{ t('returns.create') }}
           </UiButton>
         </div>
       </div>
@@ -210,16 +221,96 @@ const printInvoice = () => {
             </dl>
           </div>
         </div>
+
+        <!-- Returns History Section -->
+        <div v-if="returns && returns.length > 0" class="mt-8 pt-8 border-t print:hidden">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ t('returns.title') }}</h3>
+          <div class="space-y-4">
+            <div
+              v-for="returnRecord in returns"
+              :key="returnRecord.id"
+              class="p-4 border border-gray-200 rounded-lg"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <div class="font-mono text-sm text-gray-600">{{ returnRecord.id }}</div>
+                  <div class="text-sm text-gray-500">{{ formatDate(returnRecord.createdAt) }}</div>
+                </div>
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  :class="{
+                    'bg-green-100 text-green-800': returnRecord.status === 'processed',
+                    'bg-yellow-100 text-yellow-800': returnRecord.status === 'pending',
+                    'bg-gray-100 text-gray-800': returnRecord.status === 'cancelled'
+                  }"
+                >
+                  {{ t(`returns.status.${returnRecord.status}`) }}
+                </span>
+              </div>
+
+              <!-- Return Items -->
+              <div v-if="returnRecord.items && returnRecord.items.length > 0" class="space-y-2">
+                <div
+                  v-for="item in returnRecord.items"
+                  :key="item.id"
+                  class="flex items-center justify-between text-sm"
+                >
+                  <div class="flex-1">
+                    <span class="font-medium">{{ item.product?.name || 'Product' }}</span>
+                    <span v-if="item.variant" class="text-gray-500"> - {{ item.variant.name }}</span>
+                  </div>
+                  <div class="flex items-center gap-4 text-gray-600">
+                    <span>Qty: {{ item.quantity }}</span>
+                    <span class="font-medium">{{ formatCurrency(item.lineTotal || 0) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Return Totals -->
+              <div class="mt-3 pt-3 border-t flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                  {{ returnRecord.reason || t('returns.type.' + returnRecord.type) }}
+                  <span v-if="returnRecord.restocked" class="ml-2 text-green-600">• {{ t('returns.fields.restock') }}</span>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-semibold text-gray-900">
+                    {{ formatCurrency(returnRecord.totalAmount || 0) }}
+                  </div>
+                  <div v-if="returnRecord.refundedAmount > 0" class="text-xs text-gray-600">
+                    {{ t('returns.fields.refund_amount') }}: {{ formatCurrency(returnRecord.refundedAmount) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div v-if="returns.filter((r: any) => r.status === 'processed').length > 0" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+            <div class="flex justify-between text-sm">
+              <span class="font-medium text-red-800">{{ t('returns.title') }} ({{ t('returns.status.processed') }})</span>
+              <span class="font-semibold text-red-900">
+                -{{ formatCurrency(returns.filter((r: any) => r.status === 'processed').reduce((sum: number, r: any) => sum + (r.totalAmount || 0), 0)) }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+    <ReturnForm :sale="sale" v-model:open="openReturn" @processed="onProcessed" />
 </template>
+
+
 
 <style scoped>
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .rounded-xl, .rounded-lg {
+    border-radius: 0 !important;
   }
 }
 </style>

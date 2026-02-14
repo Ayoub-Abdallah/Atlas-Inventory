@@ -58,6 +58,113 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   children: many(categories, { relationName: 'parentChild' }),
   products: many(products),
 }));
+ 
+// ============================================================================
+// SALE RETURNS
+// ============================================================================
+export const saleReturns = sqliteTable('sale_returns', {
+  id: text('id').primaryKey(),
+  saleId: text('sale_id').notNull().references(() => sales.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.id),
+  type: text('type').default('partial'),
+  reason: text('reason'),
+  totalAmount: real('total_amount').default(0),
+  totalCost: real('total_cost').default(0),
+  refundedAmount: real('refunded_amount').default(0),
+  restocked: integer('restocked', { mode: 'boolean' }).default(1),
+  status: text('status').default('processed'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  processedAt: integer('processed_at', { mode: 'timestamp' }),
+});
+
+export const saleReturnItems = sqliteTable('sale_return_items', {
+  id: text('id').primaryKey(),
+  returnId: text('return_id').notNull().references(() => saleReturns.id, { onDelete: 'cascade' }),
+  saleItemId: text('sale_item_id').references(() => saleItems.id),
+  productId: text('product_id').notNull().references(() => products.id),
+  variantId: text('variant_id').references(() => productVariants.id),
+  quantity: integer('quantity').notNull(),
+  unitPrice: real('unit_price'),
+  unitCost: real('unit_cost'),
+  lineTotal: real('line_total'),
+  restocked: integer('restocked', { mode: 'boolean' }).default(1),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const refunds = sqliteTable('refunds', {
+  id: text('id').primaryKey(),
+  saleReturnId: text('sale_return_id').references(() => saleReturns.id),
+  amount: real('amount').notNull(),
+  paymentMethod: text('payment_method'),
+  reference: text('reference'),
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// ============================================================================
+// REPARATIONS
+// ============================================================================
+export const reparations = sqliteTable('reparations', {
+  id: text('id').primaryKey(),
+  customerId: text('customer_id').references(() => customers.id),
+  productId: text('product_id').references(() => products.id),
+  variantId: text('variant_id').references(() => productVariants.id),
+  supplierId: text('supplier_id').references(() => suppliers.id),
+  status: text('status').default('received'),
+  reportedIssue: text('reported_issue'),
+  diagnosis: text('diagnosis'),
+  repairNotes: text('repair_notes'),
+  partsCost: real('parts_cost').default(0),
+  laborCost: real('labor_cost').default(0),
+  totalCost: real('total_cost').default(0),
+  depositAmount: real('deposit_amount').default(0),
+  isWarranty: integer('is_warranty', { mode: 'boolean' }).default(0),
+  price: real('price').default(0),
+  paidAmount: real('paid_amount').default(0),
+  paymentStatus: text('payment_status').default('unpaid'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  returnedAt: integer('returned_at', { mode: 'timestamp' }),
+  handledBy: text('handled_by').references(() => users.id),
+  closedAt: integer('closed_at', { mode: 'timestamp' }),
+});
+
+export const reparationItems = sqliteTable('reparation_items', {
+  id: text('id').primaryKey(),
+  reparationId: text('reparation_id').notNull().references(() => reparations.id, { onDelete: 'cascade' }),
+  productId: text('product_id').references(() => products.id),
+  variantId: text('variant_id').references(() => productVariants.id),
+  quantity: integer('quantity').notNull(),
+  unitCost: real('unit_cost'),
+  lineTotal: real('line_total'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const saleReturnsRelations = relations(saleReturns, ({ one, many }) => ({
+  sale: one(sales, { fields: [saleReturns.saleId], references: [sales.id] }),
+  user: one(users, { fields: [saleReturns.userId], references: [users.id] }),
+  items: many(saleReturnItems),
+}));
+
+export const saleReturnItemsRelations = relations(saleReturnItems, ({ one }) => ({
+  return: one(saleReturns, { fields: [saleReturnItems.returnId], references: [saleReturns.id] }),
+  saleItem: one(saleItems, { fields: [saleReturnItems.saleItemId], references: [saleItems.id] }),
+  product: one(products, { fields: [saleReturnItems.productId], references: [products.id] }),
+  variant: one(productVariants, { fields: [saleReturnItems.variantId], references: [productVariants.id] }),
+}));
+
+export const reparationRelations = relations(reparations, ({ one, many }) => ({
+  customer: one(customers, { fields: [reparations.customerId], references: [customers.id] }),
+  items: many(reparationItems),
+  payments: many(payments),
+  handler: one(users, { fields: [reparations.handledBy], references: [users.id] }),
+}));
+
+export const reparationItemsRelations = relations(reparationItems, ({ one }) => ({
+  reparation: one(reparations, { fields: [reparationItems.reparationId], references: [reparations.id] }),
+  product: one(products, { fields: [reparationItems.productId], references: [products.id] }),
+  variant: one(productVariants, { fields: [reparationItems.variantId], references: [productVariants.id] }),
+}));
 
 // ============================================================================
 // SUPPLIERS
@@ -452,6 +559,7 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
     references: [customers.id],
   }),
   items: many(saleItems),
+  returns: many(saleReturns),
   movements: many(stockMovements),
   payments: many(payments),
 }));
@@ -462,9 +570,9 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
 export const payments = sqliteTable('payments', {
   id: text('id').primaryKey(),
   saleId: text('sale_id')
-    .notNull()
     .references(() => sales.id, { onDelete: 'cascade' }),
   customerId: text('customer_id').references(() => customers.id),
+  reparationId: text('reparation_id').references(() => reparations.id),
   amount: real('amount').notNull(),
   paymentMethod: text('payment_method', { 
     enum: ['cash', 'card', 'bank_transfer', 'mobile', 'check', 'other'] 
@@ -481,6 +589,10 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   sale: one(sales, {
     fields: [payments.saleId],
     references: [sales.id],
+  }),
+  reparation: one(reparations, {
+    fields: [payments.reparationId],
+    references: [reparations.id],
   }),
   customer: one(customers, {
     fields: [payments.customerId],
@@ -569,6 +681,21 @@ export type NewSale = typeof sales.$inferInsert;
 
 export type SaleItem = typeof saleItems.$inferSelect;
 export type NewSaleItem = typeof saleItems.$inferInsert;
+
+export type SaleReturn = typeof saleReturns.$inferSelect;
+export type NewSaleReturn = typeof saleReturns.$inferInsert;
+
+export type SaleReturnItem = typeof saleReturnItems.$inferSelect;
+export type NewSaleReturnItem = typeof saleReturnItems.$inferInsert;
+
+export type Refund = typeof refunds.$inferSelect;
+export type NewRefund = typeof refunds.$inferInsert;
+
+export type Reparation = typeof reparations.$inferSelect;
+export type NewReparation = typeof reparations.$inferInsert;
+
+export type ReparationItem = typeof reparationItems.$inferSelect;
+export type NewReparationItem = typeof reparationItems.$inferInsert;
 
 export type Customer = typeof customers.$inferSelect;
 export type NewCustomer = typeof customers.$inferInsert;

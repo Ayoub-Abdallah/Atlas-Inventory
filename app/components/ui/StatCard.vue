@@ -3,7 +3,7 @@ interface Props {
   title: string;
   value: string | number;
   icon: string;
-  iconColor?: 'default' | 'success' | 'warning' | 'destructive' | 'primary';
+  iconColor?: 'default' | 'success' | 'warning' | 'destructive' | 'error' | 'primary';
   trend?: {
     value: number;
     isPositive: boolean;
@@ -15,25 +15,27 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const iconColorClasses = computed(() => {
-  const colors = {
+  const colors: Record<string, string> = {
     default: 'text-gray-500',
     success: 'text-emerald-600',
     warning: 'text-amber-600',
     destructive: 'text-red-600',
+    error: 'text-red-600',
     primary: 'text-primary-600',
   };
-  return colors[props.iconColor];
+  return colors[props.iconColor] || colors.default;
 });
 
 const iconBgClasses = computed(() => {
-  const colors = {
+  const colors: Record<string, string> = {
     default: 'bg-gray-100',
     success: 'bg-emerald-50',
     warning: 'bg-amber-50',
     destructive: 'bg-red-50',
+    error: 'bg-red-50',
     primary: 'bg-primary-50',
   };
-  return colors[props.iconColor];
+  return colors[props.iconColor] || colors.default;
 });
 </script>
 

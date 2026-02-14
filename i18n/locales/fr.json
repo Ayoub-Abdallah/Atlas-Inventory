@@ -65,6 +65,7 @@
     "movements": "Mouvements",
     "scan": "Scan & Opérations",
     "sales": "Ventes",
+    "reparations": "Réparations",
     "credit": "Crédit & Créances",
     "expenses": "Dépenses",
     "finance": "Finances",
@@ -72,7 +73,12 @@
     "zakat": "Zakat",
     "settings": "Paramètres",
     "users": "Utilisateurs",
-    "system": "Système"
+    "system": "Système",
+    "new": "Nouveau",
+    "edit": "Modifier",
+    "returns": "Retours",
+    "draft": "Brouillon",
+    "stock": "Stock"
   },
   "auth": {
     "login": "Connexion",
@@ -98,7 +104,16 @@
     "quick_actions": "Actions rapides",
     "add_product": "Ajouter un produit",
     "add_movement": "Ajouter un mouvement",
-    "view_reports": "Voir les rapports"
+    "view_reports": "Voir les rapports",
+    "total_revenue": "Chiffre d'affaires total",
+    "total_profit": "Bénéfice total",
+    "active_reparations": "Réparations actives",
+    "completed_reparations": "Réparations terminées",
+    "reparation_revenue": "CA Réparations",
+    "reparation_profit": "Bénéfice réparations",
+    "products_label": "Produits",
+    "reparations_label": "Réparations",
+    "in_progress": "En cours"
   },
   "products": {
     "title": "Produits",
@@ -347,6 +362,7 @@
     "draft": "Brouillon",
     "confirmed": "Confirmée",
     "cancelled": "Annulée",
+    "returned": "Retournée",
     "create_sale": "Créer une vente",
     "edit_sale": "Modifier la vente",
     "view_sale": "Voir la vente",
@@ -418,7 +434,6 @@
     "thank_you": "Merci de votre visite !",
     "select_variant_to_add": "Sélectionnez une variante à ajouter au panier",
     "client": "Client",
-    "sale_confirmed": "Vente confirmée",
     "paid": "Payé",
     "partial": "Partiel",
     "unpaid": "Impayé",
@@ -467,7 +482,14 @@
     "card": "Carte",
     "transfer": "Virement bancaire",
     "due_date": "Date d'échéance",
-    "search_placeholder": "Rechercher par client, fournisseur, produit ou ID de vente..."
+    "search_placeholder": "Rechercher par client, fournisseur, produit ou ID de vente...",
+    "balance": "Solde",
+    "type": "Type",
+    "product": "Produit",
+    "reparation": "Réparation",
+    "all_types": "Tous les types",
+    "product_sales": "Ventes de produits",
+    "reparation_sales": "Ventes de réparations"
   },
   "finance": {
     "title": "Finances & Analyses",
@@ -513,7 +535,13 @@
     "fully_paid": "Entièrement payé",
     "partial_payments": "Paiements partiels",
     "unpaid_sales": "Ventes impayées",
-    "view_credit_details": "Voir les détails du crédit"
+    "view_credit_details": "Voir les détails du crédit",
+    "pricing": "Tarification",
+    "reparations_overview": "Revenus des réparations",
+    "reparations_count": "Réparations terminées",
+    "reparations_revenue": "Chiffre d'affaires",
+    "reparations_cost": "Coût",
+    "reparations_profit": "Bénéfice"
   },
   "taxes": {
     "title": "Taxes",
@@ -929,5 +957,201 @@
       "direct": "Directement au bénéficiaire",
       "other": "Autre"
     }
+  },
+  "reparations": {
+    "title": "Réparations",
+    "description": "Gérer les réparations de produits et les réclamations de garantie",
+    "create": "Nouvelle Réparation",
+    "edit": "Modifier la Réparation",
+    "view": "Voir la Réparation",
+    "delete": "Supprimer la Réparation",
+    "no_reparations": "Aucune Réparation",
+    "no_reparations_description": "Aucun enregistrement de réparation. Commencez par créer une nouvelle réparation.",
+    "status": {
+      "draft": "Brouillon",
+      "received": "Reçu",
+      "diagnosed": "Diagnostiqué",
+      "in_progress": "En Cours",
+      "completed": "Terminé",
+      "returned": "Retourné",
+      "cancelled": "Annulé"
+    },
+    "fields": {
+      "customer": "Client",
+      "select_customer": "Sélectionner un client (optionnel)",
+      "product": "Produit/Article",
+      "select_product": "Sélectionner un produit (optionnel)",
+      "reported_issue": "Problème Signalé",
+      "reported_issue_placeholder": "Décrivez le problème ou la demande du client",
+      "diagnosis": "Diagnostic",
+      "diagnosis_placeholder": "Diagnostic technique et conclusions",
+      "repair_notes": "Notes de Réparation",
+      "repair_notes_placeholder": "Détails des travaux de réparation effectués",
+      "parts": "Pièces & Matériaux",
+      "parts_cost": "Coût des Pièces",
+      "labor_cost": "Coût de la Main-d'Œuvre",
+      "total_cost": "Coût Total",
+      "deposit": "Montant de l'Acompte",
+      "price": "Prix Client",
+      "price_hint": "Calculé automatiquement à partir du coût total",
+      "price_manual": "Défini manuellement — cliquez Auto pour réinitialiser",
+      "reset_price": "Réinitialiser au prix calculé automatiquement",
+      "is_warranty": "Réparation sous Garantie",
+      "payment_status": "Statut du Paiement",
+      "paid_amount": "Montant Payé",
+      "handled_by": "Traité Par",
+      "received_date": "Reçu",
+      "returned_date": "Retourné",
+      "closed_date": "Clôturé",
+      "add_part": "+ Ajouter une Pièce",
+      "part_name": "Nom de la Pièce / Produit",
+      "quantity": "Qté",
+      "unit_cost": "Coût Unitaire",
+      "line_total": "Total Ligne",
+      "remove": "Supprimer",
+      "search_product": "Rechercher un produit ou saisir un nom de pièce"
+    },
+    "actions": {
+      "mark_diagnosed": "Marquer Diagnostiqué",
+      "mark_in_progress": "Démarrer la Réparation",
+      "mark_completed": "Marquer Terminé",
+      "mark_returned": "Marquer Retourné",
+      "mark_cancelled": "Annuler la Réparation",
+      "save_draft": "Enregistrer en Brouillon",
+      "confirm_repair": "Confirmer la Réparation",
+      "continue_editing": "Continuer la Modification",
+      "record_payment": "Enregistrer le Paiement",
+      "print_receipt": "Imprimer le Reçu",
+      "update_status": "Mettre à Jour le Statut",
+      "close_reparation": "Clôturer la Réparation"
+    },
+    "messages": {
+      "created": "Réparation créée avec succès",
+      "updated": "Réparation mise à jour avec succès",
+      "deleted": "Réparation supprimée avec succès",
+      "status_updated": "Statut mis à jour avec succès",
+      "draft_saved": "Brouillon enregistré avec succès",
+      "draft_notice": "Cette réparation est un brouillon",
+      "draft_notice_description": "Cette réparation n'a pas encore été confirmée. Modifiez-la et confirmez quand vous êtes prêt.",
+      "created_and_paid": "Réparation créée et payée",
+      "issue_required": "Veuillez décrire le problème signalé",
+      "confirm_delete": "Êtes-vous sûr de vouloir supprimer cet enregistrement de réparation ?",
+      "confirm_cancel": "Êtes-vous sûr de vouloir annuler cette réparation ?"
+    },
+    "filters": {
+      "all_statuses": "Tous les Statuts",
+      "date_range": "Période",
+      "search_placeholder": "Rechercher par client, problème ou ID..."
+    },
+    "payment": {
+      "unpaid": "Impayé",
+      "partial": "Partiel",
+      "paid": "Payé",
+      "overpaid": "Trop-perçu"
+    },
+    "summary": {
+      "total_reparations": "Total Réparations",
+      "drafts": "Brouillons",
+      "active_repairs": "Réparations Actives",
+      "completed": "Terminées",
+      "completed_today": "Terminées Aujourd'hui",
+      "total_value": "Valeur Totale",
+      "collected": "Encaissé",
+      "outstanding": "Impayé",
+      "revenue": "Revenu des Réparations"
+    },
+    "payment_modal_title": "Paiement & Confirmation",
+    "immediate_payment": "Payer Maintenant",
+    "immediate_payment_desc": "Paiement intégral reçu",
+    "credit_payment": "Payer Plus Tard",
+    "credit_payment_desc": "Partiel ou impayé",
+    "full_payment_received": "Paiement Intégral Reçu",
+    "partial_or_unpaid": "Partiel ou Impayé",
+    "deposit_amount": "Montant de l'Acompte",
+    "payment_method": "Mode de Paiement",
+    "amount": "Montant",
+    "outstanding": "Restant Dû",
+    "confirm_and_pay": "Confirmer & Payer",
+    "confirm": "Confirmer"
+  },
+  "returns": {
+    "title": "Retours & Remboursements",
+    "description": "Gérer les retours de produits et les remboursements",
+    "create": "Traiter un Retour",
+    "view": "Voir le Retour",
+    "no_returns": "Aucun Retour",
+    "no_returns_description": "Aucun enregistrement de retour trouvé",
+    "type": {
+      "partial": "Retour Partiel",
+      "full": "Retour Complet"
+    },
+    "status": {
+      "pending": "En Attente",
+      "processed": "Traité",
+      "cancelled": "Annulé"
+    },
+    "fields": {
+      "sale": "Vente Originale",
+      "return_type": "Type de Retour",
+      "reason": "Motif du Retour",
+      "reason_placeholder": "Pourquoi cet article est-il retourné ?",
+      "items": "Articles Retournés",
+      "restock": "Remettre en Stock",
+      "restock_help": "Ajouter les articles retournés à l'inventaire",
+      "refund_amount": "Montant du Remboursement",
+      "refund_method": "Mode de Remboursement",
+      "select_items": "Sélectionner les articles à retourner",
+      "max_quantity": "Quantité max",
+      "returned_qty": "Qté retournée",
+      "unit_price": "Prix unitaire",
+      "total": "Total",
+      "quantity": "Quantité",
+      "refund_details": "Détails du Remboursement",
+      "items_returned": "Articles en cours de retour",
+      "calculated_refund": "Remboursement calculé",
+      "editable": "modifiable",
+      "refund_info": "Le remboursement sera enregistré dans les finances et déduit du chiffre d'affaires.",
+      "select_one_item": "Veuillez sélectionner au moins un article à retourner",
+      "success": "Retour traité avec succès",
+      "error": "Erreur lors du traitement du retour"
+    },
+    "actions": {
+      "process_return": "Traiter le Retour",
+      "issue_refund": "Émettre le Remboursement",
+      "cancel_return": "Annuler le Retour"
+    },
+    "messages": {
+      "processed": "Retour traité avec succès",
+      "refunded": "Remboursement émis avec succès",
+      "cancelled": "Retour annulé",
+      "confirm_process": "Traiter ce retour ? Cela mettra à jour l'inventaire et les finances.",
+      "confirm_refund": "Émettre un remboursement pour ce retour ?",
+      "already_returned": "Cette vente a déjà été entièrement retournée",
+      "invalid_quantity": "La quantité retournée dépasse la quantité originale"
+    },
+    "reasons": {
+      "defective": "Produit Défectueux",
+      "wrong_item": "Mauvais Article",
+      "not_needed": "Plus Nécessaire",
+      "damaged": "Endommagé lors du Transport",
+      "other": "Autre"
+    }
+  },
+  "filters": {
+    "today": "Aujourd'hui",
+    "30_days": "30 Derniers Jours",
+    "90_days": "90 Derniers Jours",
+    "1_year": "Dernière Année",
+    "custom": "Période Personnalisée"
+  },
+  "payments": {
+    "title": "Paiements",
+    "amount": "Montant",
+    "method": "Mode",
+    "date": "Date",
+    "reference": "Référence",
+    "status": "Statut du Paiement",
+    "record": "Enregistrer un Paiement",
+    "history": "Historique des Paiements"
   }
 }

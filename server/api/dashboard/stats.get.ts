@@ -1,4 +1,4 @@
-import { eq, sql, lte, desc } from 'drizzle-orm';
+import { eq, ne, and, sql, lte, desc, or } from 'drizzle-orm';
 
 export default defineEventHandler(async () => {
   const db = useDB();
@@ -95,6 +95,44 @@ export default defineEventHandler(async () => {
 
   const totalStockValue = Math.round((productStockValue + variantStockValue) * 100) / 100;
 
+  // Get reparations stats
+  const activeReparationsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(tables.reparations)
+    .where(sql`${tables.reparations.status} IN ('received', 'diagnosed', 'in_progress')`);
+  const activeReparations = activeReparationsResult[0]?.count ?? 0;
+
+  const completedReparationsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(tables.reparations)
+    .where(sql`${tables.reparations.status} IN ('completed', 'returned')`);
+  const completedReparations = completedReparationsResult[0]?.count ?? 0;
+
+  // Reparation financial metrics (all non-draft/non-cancelled reparations)
+  const paidReparations = await db.query.reparations.findMany({
+    where: and(
+      ne(tables.reparations.status, 'draft'),
+      ne(tables.reparations.status, 'cancelled')
+    ),
+  });
+
+  const paidReparationsCount = paidReparations.filter(r => r.paymentStatus === 'paid').length;
+  const reparationRevenue = paidReparations.reduce((sum, r) => sum + (r.price || 0), 0);
+  const reparationCost = paidReparations.reduce((sum, r) => sum + (r.totalCost || 0), 0);
+  const reparationProfit = reparationRevenue - reparationCost;
+
+  // Sales financial metrics (confirmed sales only)
+  const confirmedSales = await db.query.sales.findMany({
+    where: eq(tables.sales.status, 'confirmed'),
+  });
+  const salesRevenue = confirmedSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+  const salesCost = confirmedSales.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+  const salesProfit = salesRevenue - salesCost;
+
+  // Combined totals
+  const totalRevenue = salesRevenue + reparationRevenue;
+  const totalProfit = salesProfit + reparationProfit;
+
   const recentMovements = await db.query.stockMovements.findMany({
     limit: 5,
     orderBy: [desc(tables.stockMovements.createdAt)],
@@ -109,6 +147,16 @@ export default defineEventHandler(async () => {
     totalSuppliers,
     lowStockCount,
     totalStockValue,
+    activeReparations,
+    completedReparations,
+    paidReparationsCount,
+    reparationRevenue: Math.round(reparationRevenue * 100) / 100,
+    reparationCost: Math.round(reparationCost * 100) / 100,
+    reparationProfit: Math.round(reparationProfit * 100) / 100,
+    salesRevenue: Math.round(salesRevenue * 100) / 100,
+    salesProfit: Math.round(salesProfit * 100) / 100,
+    totalRevenue: Math.round(totalRevenue * 100) / 100,
+    totalProfit: Math.round(totalProfit * 100) / 100,
     lowStockProducts,
     recentMovements,
   };

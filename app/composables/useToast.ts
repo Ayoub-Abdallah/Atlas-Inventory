@@ -15,31 +15,53 @@ interface Toast {
   info: (title: string, description?: string) => string;
   remove: (id: string) => void;
   clear: () => void;
+  /**
+   * Legacy helper — maps `showToast(message, type)` to the typed methods.
+   * Keeps backward-compat with call sites that destructure `{ showToast }`.
+   */
+  showToast: (message: string, type?: ToastType | string) => string;
 }
 
 export function useToast(): Toast {
   // Try to get from injection first
   const injected = inject<Toast | null>('toast', null);
+
+  // Resolve the base toast (injected → window fallback → no-op)
+  let base: Omit<Toast, 'showToast'>;
+
   if (injected) {
-    return injected;
+    base = injected;
+  } else if (import.meta.client && (window as any).$toast) {
+    base = (window as any).$toast;
+  } else {
+    console.warn(
+      'Toast system not initialized. Make sure UiToastContainer is in your app.'
+    );
+    base = {
+      add: () => '',
+      success: () => '',
+      error: () => '',
+      warning: () => '',
+      info: () => '',
+      remove: () => {},
+      clear: () => {},
+    };
   }
 
-  // Fallback to window.$toast if available
-  if (import.meta.client && (window as any).$toast) {
-    return (window as any).$toast;
+  // Build the legacy `showToast(message, type)` bridge
+  function showToast(message: string, type?: ToastType | string): string {
+    switch (type) {
+      case 'error':
+        return base.error(message);
+      case 'warning':
+        return base.warning(message);
+      case 'info':
+        return base.info(message);
+      case 'success':
+      default:
+        return base.success(message);
+    }
   }
 
-  // Return a no-op toast if nothing is available
-  console.warn(
-    'Toast system not initialized. Make sure UiToastContainer is in your app.'
-  );
-  return {
-    add: () => '',
-    success: () => '',
-    error: () => '',
-    warning: () => '',
-    info: () => '',
-    remove: () => {},
-    clear: () => {},
-  };
+  return { ...base, showToast };
 }

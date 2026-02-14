@@ -21,6 +21,7 @@ const dateRange = ref('30d');
 const customFrom = ref('');
 const customTo = ref('');
 const searchQuery = ref('');
+const sourceFilter = ref(''); // '', 'product', 'reparation'
 
 const dateParams = computed(() => {
   const now = new Date();
@@ -55,9 +56,13 @@ const dateParams = computed(() => {
       to = now;
   }
   
+  // Use local date components to avoid UTC shift
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const toLocalDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  
   return {
-    startDate: from.toISOString().split('T')[0],
-    endDate: to.toISOString().split('T')[0],
+    startDate: toLocalDateStr(from),
+    endDate: toLocalDateStr(to),
   };
 });
 
@@ -69,6 +74,9 @@ const { data: sales, pending, refresh } = await useFetch(() => {
   if (searchQuery.value.trim()) {
     params.append('search', searchQuery.value.trim());
   }
+  if (sourceFilter.value) {
+    params.append('source', sourceFilter.value);
+  }
   return `/api/sales?${params.toString()}`;
 });
 
@@ -77,8 +85,8 @@ watch(searchQuery, () => {
   refresh();
 });
 
-// Watch for date range changes
-watch([dateRange, customFrom, customTo], () => {
+// Watch for date range and source filter changes
+watch([dateRange, customFrom, customTo, sourceFilter], () => {
   refresh();
 });
 
@@ -160,8 +168,9 @@ const hasDraftSales = computed(() =>
 // Table columns
 const columns = [
   { key: 'id', label: 'ID' },
+  { key: 'type', label: t('sales.type') },
   { key: 'createdAt', label: t('sales.sale_date') },
-  { key: 'supplier', label: t('suppliers.title') },
+  { key: 'customer', label: t('sales.customer') },
   { key: 'items', label: t('sales.sale_items') },
   { key: 'total', label: t('sales.total') },
   { key: 'status', label: t('app.status') },
@@ -200,6 +209,13 @@ const getStatusColor = (status: string) => {
             />
           </div>
         </div>
+
+        <!-- Source Type Filter -->
+        <select v-model="sourceFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">{{ t('sales.all_types') }}</option>
+          <option value="product">{{ t('sales.product_sales') }}</option>
+          <option value="reparation">{{ t('sales.reparation_sales') }}</option>
+        </select>
         
         <!-- Date Range Selector -->
         <select v-model="dateRange" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -272,17 +288,37 @@ const getStatusColor = (status: string) => {
           {{ item.id.slice(0, 12) }}...
         </span>
       </template>
+
+      <template #type="{ item }">
+        <span
+          v-if="item.sourceType === 'reparation'"
+          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+        >
+          <Icon name="lucide:wrench" class="h-3 w-3" />
+          {{ t('sales.reparation') }}
+        </span>
+        <span
+          v-else
+          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+        >
+          <Icon name="lucide:package" class="h-3 w-3" />
+          {{ t('sales.product') }}
+        </span>
+      </template>
       
       <template #createdAt="{ item }">
         {{ formatDate(item.createdAt) }}
       </template>
       
-      <template #supplier="{ item }">
-        {{ item.supplier?.name || '-' }}
+      <template #customer="{ item }">
+        {{ item.customer?.name || item.supplier?.name || '-' }}
       </template>
       
       <template #items="{ item }">
-        <span class="text-gray-600">
+        <span v-if="item.sourceType === 'reparation'" class="text-gray-600 text-sm">
+          {{ (item.reportedIssue || '').substring(0, 40) }}{{ (item.reportedIssue || '').length > 40 ? '...' : '' }}
+        </span>
+        <span v-else class="text-gray-600">
           {{ item.items?.length || 0 }} {{ t('sales.sale_items') }}
         </span>
       </template>
@@ -304,13 +340,15 @@ const getStatusColor = (status: string) => {
       
       <template #actions="{ item }">
         <div class="flex items-center gap-2">
-          <NuxtLink :to="`/sales/${item.id}`">
-            <UiButton variant="ghost" size="sm">
-              <Icon name="lucide:eye" class="h-4 w-4" />
-            </UiButton>
-          </NuxtLink>
+          <UiButton
+            variant="ghost"
+            size="sm"
+            @click="navigateTo(item.sourceType === 'reparation' ? `/reparations/${item.id}` : `/sales/${item.id}`)"
+          >
+            <Icon name="lucide:eye" class="h-4 w-4" />
+          </UiButton>
           <UiButton 
-            v-if="item.status === 'draft'" 
+            v-if="item.sourceType === 'product' && item.status === 'draft'" 
             variant="ghost" 
             size="sm"
             @click="deleteSale(item.id)"
