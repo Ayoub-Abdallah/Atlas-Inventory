@@ -31,6 +31,7 @@ export const categories = sqliteTable(
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
+    slug: text('slug'),
     description: text('description'),
     parentId: text('parent_id'),
     color: text('color').default('#6B7280'),
@@ -204,6 +205,14 @@ export const products = sqliteTable('products', {
   name: text('name').notNull(),
   description: text('description'),
 
+  // Storefront fields
+  slug: text('slug'),
+  brand: text('brand'),
+  specs: text('specs', { mode: 'json' }), // [{ key, value }]
+  relatedProducts: text('related_products', { mode: 'json' }), // product ids, manual picks
+  published: integer('published', { mode: 'boolean' }).default(false),
+  publishedAt: integer('published_at', { mode: 'timestamp' }),
+
   categoryId: text('category_id').references(() => categories.id),
 
   costPrice: real('cost_price').default(0),
@@ -246,6 +255,115 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   supplierPrices: many(supplierPrices),
   stockMovements: many(stockMovements),
   variants: many(productVariants),
+  media: many(mediaAssets),
+}));
+
+// ============================================================================
+// MEDIA ASSETS
+// Product gallery images and technical documents stored in Cloudflare R2
+// (via NuxtHub blob: local disk in dev, R2 bucket in production).
+// Only the object pathname is stored; files are served from /media/[pathname].
+// ============================================================================
+export const mediaAssets = sqliteTable('media_assets', {
+  id: text('id').primaryKey(),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'cascade' }),
+  kind: text('kind', { enum: ['image', 'document'] })
+    .notNull()
+    .default('image'),
+  pathname: text('pathname').notNull(), // blob object key
+  url: text('url').notNull(), // public path, e.g. /media/products/xxx/file.webp
+  filename: text('filename').notNull(),
+  mimeType: text('mime_type'),
+  size: integer('size'),
+  alt: text('alt'),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const mediaAssetsRelations = relations(mediaAssets, ({ one }) => ({
+  product: one(products, {
+    fields: [mediaAssets.productId],
+    references: [products.id],
+  }),
+}));
+
+// ============================================================================
+// WEB ORDERS
+// Orders placed from the public storefront (no online payment).
+// Flow: new -> confirmed (stock decremented) -> delivered, or cancelled.
+// Can be converted to a sale to enter the existing partial-payment flow.
+// ============================================================================
+export const webOrders = sqliteTable('web_orders', {
+  id: text('id').primaryKey(),
+  orderNumber: text('order_number').notNull().unique(),
+  customerName: text('customer_name').notNull(),
+  phone: text('phone').notNull(),
+  note: text('note'),
+  status: text('status', {
+    enum: ['new', 'confirmed', 'delivered', 'cancelled'],
+  })
+    .notNull()
+    .default('new'),
+  totalAmount: real('total_amount').notNull().default(0),
+  saleId: text('sale_id').references(() => sales.id),
+  customerId: text('customer_id').references(() => customers.id),
+  confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
+  deliveredAt: integer('delivered_at', { mode: 'timestamp' }),
+  cancelledAt: integer('cancelled_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const webOrderItems = sqliteTable('web_order_items', {
+  id: text('id').primaryKey(),
+  orderId: text('order_id')
+    .notNull()
+    .references(() => webOrders.id, { onDelete: 'cascade' }),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id),
+  variantId: text('variant_id').references(() => productVariants.id),
+  // Name/price snapshots so the order stays readable if the product changes
+  productName: text('product_name').notNull(),
+  variantName: text('variant_name'),
+  unitPrice: real('unit_price').notNull(),
+  quantity: integer('quantity').notNull(),
+  lineTotal: real('line_total').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date()
+  ),
+});
+
+export const webOrdersRelations = relations(webOrders, ({ one, many }) => ({
+  items: many(webOrderItems),
+  sale: one(sales, { fields: [webOrders.saleId], references: [sales.id] }),
+  customer: one(customers, {
+    fields: [webOrders.customerId],
+    references: [customers.id],
+  }),
+}));
+
+export const webOrderItemsRelations = relations(webOrderItems, ({ one }) => ({
+  order: one(webOrders, {
+    fields: [webOrderItems.orderId],
+    references: [webOrders.id],
+  }),
+  product: one(products, {
+    fields: [webOrderItems.productId],
+    references: [products.id],
+  }),
+  variant: one(productVariants, {
+    fields: [webOrderItems.variantId],
+    references: [productVariants.id],
+  }),
 }));
 
 // ============================================================================
@@ -703,6 +821,15 @@ export type NewCustomer = typeof customers.$inferInsert;
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
 
+export type MediaAsset = typeof mediaAssets.$inferSelect;
+export type NewMediaAsset = typeof mediaAssets.$inferInsert;
+
+export type WebOrder = typeof webOrders.$inferSelect;
+export type NewWebOrder = typeof webOrders.$inferInsert;
+
+export type WebOrderItem = typeof webOrderItems.$inferSelect;
+export type NewWebOrderItem = typeof webOrderItems.$inferInsert;
+
 // ============================================================================
 // USERS
 // Roles:
@@ -750,6 +877,11 @@ export const settings = sqliteTable('settings', {
   invoiceTemplate: text('invoice_template'), // base64 encoded DOCX or null
   invoicePrefix: text('invoice_prefix').default('INV-'),
   invoiceNextNumber: integer('invoice_next_number').default(1),
+  // Storefront settings
+  siteUrl: text('site_url'), // public base URL, e.g. https://shop.example.com
+  phoneCountryCode: text('phone_country_code').default('+213'), // for wa.me links
+  storePhone: text('store_phone'), // shop contact shown on the storefront
+  storeAddress: text('store_address'),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
     () => new Date()
   ),

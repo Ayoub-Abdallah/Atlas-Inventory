@@ -38,7 +38,7 @@ export function useNotifications() {
               type: 'error',
               title: t('notifications.out_of_stock'),
               description: t('notifications.out_of_stock_desc', { name: product.name }),
-              href: `/products/${product.id}`,
+              href: `/admin/products/${product.id}`,
               read: readGeneratedIds.value.has(id),
               createdAt: new Date(),
             });
@@ -49,7 +49,7 @@ export function useNotifications() {
               type: 'warning',
               title: t('notifications.low_stock'),
               description: t('notifications.low_stock_desc', { name: product.name, quantity: product.stockQuantity, min: product.stockMin }),
-              href: `/products/${product.id}`,
+              href: `/admin/products/${product.id}`,
               read: readGeneratedIds.value.has(id),
               createdAt: new Date(),
             });
@@ -67,7 +67,7 @@ export function useNotifications() {
                   type: 'error',
                   title: t('notifications.out_of_stock'),
                   description: t('notifications.out_of_stock_desc', { name: `${product.name} - ${variant.name}` }),
-                  href: `/products/${product.id}`,
+                  href: `/admin/products/${product.id}`,
                   read: readGeneratedIds.value.has(id),
                   createdAt: new Date(),
                 });
@@ -78,7 +78,7 @@ export function useNotifications() {
                   type: 'warning',
                   title: t('notifications.low_stock'),
                   description: t('notifications.low_stock_desc_variant', { name: `${product.name} - ${variant.name}`, quantity: variant.stockQuantity }),
-                  href: `/products/${product.id}`,
+                  href: `/admin/products/${product.id}`,
                   read: readGeneratedIds.value.has(id),
                   createdAt: new Date(),
                 });

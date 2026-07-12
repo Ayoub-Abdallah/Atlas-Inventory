@@ -18,3 +18,9 @@ database_id = "5e4b4d66-726b-48f6-8ee7-796fe6abfae6"
 [[kv_namespaces]]
 binding = "KV"
 id = "eaa5b2a56c454c30a750527add58ece8"
+
+# R2 bucket for product images and technical documents (NuxtHub blob)
+# Create with: wrangler r2 bucket create atlas-inventory-media
+[[r2_buckets]]
+binding = "BLOB"
+bucket_name = "atlas-inventory-media"

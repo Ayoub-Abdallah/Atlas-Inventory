@@ -37,7 +37,8 @@
     "sql.js": "^1.13.0",
     "vue": "^3.5.25",
     "vue-chartjs": "^5.3.3",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.3",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.77",

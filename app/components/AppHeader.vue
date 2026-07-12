@@ -44,16 +44,17 @@ onUnmounted(() => {
 
 const breadcrumbs = computed(() => {
   const path = route.path;
-  if (path === '/') {
-    return [{ name: t('nav.dashboard'), href: '/', icon: 'lucide:layout-dashboard' }];
+  if (path === '/admin') {
+    return [{ name: t('nav.dashboard'), href: '/admin', icon: 'lucide:layout-dashboard' }];
   }
 
-  const segments = path.split('/').filter(Boolean);
+  // Skip the /admin prefix; the dashboard crumb already covers it
+  const segments = path.split('/').filter(Boolean).slice(1);
   const crumbs: { name: string; href: string; icon?: string }[] = [
-    { name: t('nav.dashboard'), href: '/', icon: 'lucide:home' },
+    { name: t('nav.dashboard'), href: '/admin', icon: 'lucide:home' },
   ];
 
-  let currentPath = '';
+  let currentPath = '/admin';
   for (const segment of segments) {
     currentPath += `/${segment}`;
     // Try to get translation from nav, fallback to capitalized segment
@@ -104,7 +105,7 @@ const filteredResults = computed(() => {
           id: product.id,
           name: product.name,
           description: product.sku ? `SKU: ${product.sku}` : undefined,
-          href: `/products/${product.id}`,
+          href: `/admin/products/${product.id}`,
           icon: 'lucide:package',
         });
       }
@@ -119,7 +120,7 @@ const filteredResults = computed(() => {
               id: product.id,
               name: `${product.name} - ${variant.name}`,
               description: variant.sku ? `SKU: ${variant.sku}` : undefined,
-              href: `/products/${product.id}`,
+              href: `/admin/products/${product.id}`,
               icon: 'lucide:package',
             });
           }
@@ -141,7 +142,7 @@ const filteredResults = computed(() => {
           id: supplier.id,
           name: supplier.name,
           description: supplier.email || undefined,
-          href: '/suppliers',
+          href: '/admin/suppliers',
           icon: 'lucide:truck',
         });
       }
@@ -160,7 +161,7 @@ const filteredResults = computed(() => {
           id: category.id,
           name: category.name,
           description: category.description || undefined,
-          href: '/categories',
+          href: '/admin/categories',
           icon: 'lucide:folder',
         });
       }
@@ -365,7 +366,7 @@ onMounted(() => {
               class="border-t border-gray-100 p-2"
             >
               <NuxtLink
-                to="/movements"
+                to="/admin/movements"
                 class="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 @click="closeNotifications"
               >
@@ -382,19 +383,19 @@ onMounted(() => {
 
       <!-- Quick Actions - Compact buttons -->
       <div class="flex items-center gap-2">
-        <NuxtLink to="/movements">
+        <NuxtLink to="/admin/movements">
           <UiButton variant="outline" size="sm" class="gap-2">
             <Icon name="lucide:arrow-down" class="h-4 w-4 text-emerald-600" />
             <span>{{ t('stock.stock_in') }}</span>
           </UiButton>
         </NuxtLink>
-        <NuxtLink to="/movements">
+        <NuxtLink to="/admin/movements">
           <UiButton variant="outline" size="sm" class="gap-2">
             <Icon name="lucide:arrow-up" class="h-4 w-4 text-red-600" />
             <span>{{ t('stock.stock_out') }}</span>
           </UiButton>
         </NuxtLink>
-        <NuxtLink to="/products">
+        <NuxtLink to="/admin/products">
           <UiButton
             variant="primary"
             size="sm"
@@ -526,7 +527,7 @@ onMounted(() => {
               </p>
               <div class="flex flex-col p-2">
                 <NuxtLink
-                  to="/products"
+                  to="/admin/products"
                   class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                   @click="isSearchOpen = false"
                 >
@@ -538,7 +539,7 @@ onMounted(() => {
                   <span>{{ t('nav.products') }}</span>
                 </NuxtLink>
                 <NuxtLink
-                  to="/movements"
+                  to="/admin/movements"
                   class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                   @click="isSearchOpen = false"
                 >
@@ -550,7 +551,7 @@ onMounted(() => {
                   <span>{{ t('app.stock_movements') }}</span>
                 </NuxtLink>
                 <NuxtLink
-                  to="/suppliers"
+                  to="/admin/suppliers"
                   class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                   @click="isSearchOpen = false"
                 >

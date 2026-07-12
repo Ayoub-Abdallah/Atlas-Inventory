@@ -1,3 +1,5 @@
+import { slugify } from '../utils/slug';
+
 // Migration endpoint to create database tables
 export default defineEventHandler(async () => {
   const db = hubDatabase();
@@ -270,18 +272,143 @@ export default defineEventHandler(async () => {
     )`,
   ];
   
+  // Storefront tables (media assets, web orders)
+  migrations.push(
+    `CREATE TABLE IF NOT EXISTS media_assets (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'image',
+      pathname TEXT NOT NULL,
+      url TEXT NOT NULL,
+      filename TEXT NOT NULL,
+      mime_type TEXT,
+      size INTEGER,
+      alt TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at INTEGER,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )`,
+
+    `CREATE TABLE IF NOT EXISTS web_orders (
+      id TEXT PRIMARY KEY,
+      order_number TEXT NOT NULL UNIQUE,
+      customer_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      note TEXT,
+      status TEXT NOT NULL DEFAULT 'new',
+      total_amount REAL NOT NULL DEFAULT 0,
+      sale_id TEXT,
+      customer_id TEXT,
+      confirmed_at INTEGER,
+      delivered_at INTEGER,
+      cancelled_at INTEGER,
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (sale_id) REFERENCES sales(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id)
+    )`,
+
+    `CREATE TABLE IF NOT EXISTS web_order_items (
+      id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      product_id TEXT NOT NULL,
+      variant_id TEXT,
+      product_name TEXT NOT NULL,
+      variant_name TEXT,
+      unit_price REAL NOT NULL,
+      quantity INTEGER NOT NULL,
+      line_total REAL NOT NULL,
+      created_at INTEGER,
+      FOREIGN KEY (order_id) REFERENCES web_orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+    )`
+  );
+
   // Run each migration
   for (const sql of migrations) {
     await db.prepare(sql).run();
   }
-  
+
+  // Column additions on existing tables (SQLite has no ADD COLUMN IF NOT
+  // EXISTS, so check pragma first)
+  const addColumns: Array<{ table: string; column: string; ddl: string }> = [
+    { table: 'categories', column: 'slug', ddl: 'slug TEXT' },
+    { table: 'products', column: 'slug', ddl: 'slug TEXT' },
+    { table: 'products', column: 'brand', ddl: 'brand TEXT' },
+    { table: 'products', column: 'specs', ddl: 'specs TEXT' },
+    { table: 'products', column: 'related_products', ddl: 'related_products TEXT' },
+    { table: 'products', column: 'published', ddl: 'published INTEGER DEFAULT 0' },
+    { table: 'products', column: 'published_at', ddl: 'published_at INTEGER' },
+    { table: 'settings', column: 'site_url', ddl: 'site_url TEXT' },
+    { table: 'settings', column: 'phone_country_code', ddl: "phone_country_code TEXT DEFAULT '+213'" },
+    { table: 'settings', column: 'store_phone', ddl: 'store_phone TEXT' },
+    { table: 'settings', column: 'store_address', ddl: 'store_address TEXT' },
+  ];
+
+  for (const { table, column, ddl } of addColumns) {
+    const info = await db.prepare(`PRAGMA table_info(${table})`).all();
+    const cols = (info.results as Array<{ name: string }>).map((c) => c.name);
+    if (!cols.includes(column)) {
+      await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${ddl}`).run();
+    }
+  }
+
+  await db
+    .prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON products(slug)`
+    )
+    .run();
+  await db
+    .prepare(
+      `CREATE INDEX IF NOT EXISTS idx_media_assets_product ON media_assets(product_id)`
+    )
+    .run();
+  await db
+    .prepare(
+      `CREATE INDEX IF NOT EXISTS idx_web_order_items_order ON web_order_items(order_id)`
+    )
+    .run();
+
+  // Backfill slugs for products/categories created before the storefront
+  let backfilled = 0;
+  for (const table of ['products', 'categories']) {
+    const missing = await db
+      .prepare(`SELECT id, name FROM ${table} WHERE slug IS NULL OR slug = ''`)
+      .all();
+    const rows = missing.results as Array<{ id: string; name: string }>;
+    if (rows.length === 0) continue;
+
+    const existing = await db
+      .prepare(`SELECT slug FROM ${table} WHERE slug IS NOT NULL`)
+      .all();
+    const used = new Set(
+      (existing.results as Array<{ slug: string }>).map((r) => r.slug)
+    );
+    for (const row of rows) {
+      let slug = slugify(row.name);
+      if (used.has(slug)) {
+        let i = 2;
+        while (used.has(`${slug}-${i}`)) i++;
+        slug = `${slug}-${i}`;
+      }
+      used.add(slug);
+      await db
+        .prepare(`UPDATE ${table} SET slug = ? WHERE id = ?`)
+        .bind(slug, row.id)
+        .run();
+      backfilled++;
+    }
+  }
+
   // Insert default settings
   await db.prepare(`INSERT OR IGNORE INTO settings (id) VALUES (1)`).run();
   await db.prepare(`INSERT OR IGNORE INTO zakat_settings (id) VALUES (1)`).run();
-  
+
   return {
     success: true,
     message: 'Database migrations completed successfully',
     tables: migrations.length,
+    slugsBackfilled: backfilled,
   };
 });

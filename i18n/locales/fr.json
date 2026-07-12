@@ -55,7 +55,8 @@
     "stock_movements": "Mouvements de stock",
     "select": "Sélectionner",
     "confirm_delete_item": "Êtes-vous sûr de vouloir supprimer cet élément ?",
-    "to": "à"
+    "to": "à",
+    "refresh": "Actualiser"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -78,7 +79,8 @@
     "edit": "Modifier",
     "returns": "Retours",
     "draft": "Brouillon",
-    "stock": "Stock"
+    "stock": "Stock",
+    "orders": "Commandes web"
   },
   "auth": {
     "login": "Connexion",
@@ -221,7 +223,88 @@
     "volume_unit": "Volume (L)",
     "edit_variant": "Modifier la variante",
     "variant_config_description": "Configurer les prix, le stock et le fournisseur pour",
-    "save_variant": "Enregistrer la variante"
+    "save_variant": "Enregistrer la variante",
+    "publish": {
+      "published": "Produit publié sur la boutique",
+      "unpublished": "Produit retiré de la boutique",
+      "failed": "Impossible de changer l'état de publication",
+      "toggleOn": "Publier sur la boutique",
+      "toggleOff": "Dépublier",
+      "statusOn": "Publié",
+      "statusOff": "Non publié"
+    },
+    "copyLink": {
+      "label": "Copier le lien",
+      "title": "Copier le lien public du produit",
+      "copied": "Lien copié dans le presse-papiers",
+      "failed": "Impossible de copier le lien",
+      "unpublished": "Publiez le produit pour obtenir un lien partageable"
+    },
+    "media": {
+      "gallery": "Images de la galerie",
+      "documents": "Documents techniques (PDF)",
+      "cover": "Couverture",
+      "uploaded": "{count} fichier(s) téléversé(s)",
+      "uploadFailed": "Échec du téléversement",
+      "deleted": "Fichier supprimé",
+      "deleteFailed": "Impossible de supprimer le fichier",
+      "dropHint": "Déposez des images ici ou parcourez (JPEG, PNG, WebP · 8 Mo max)",
+      "browse": "Parcourir",
+      "addPdf": "Ajouter un PDF",
+      "moveLeft": "Avancer",
+      "moveRight": "Reculer"
+    },
+    "storefront": {
+      "title": "Boutique en ligne",
+      "saved": "Détails boutique enregistrés",
+      "saveFailed": "Impossible d'enregistrer les détails",
+      "brand": "Marque",
+      "brandPlaceholder": "ex. Samsung",
+      "specs": "Caractéristiques",
+      "addSpec": "Ajouter une ligne",
+      "noSpecs": "Aucune caractéristique. Ajoutez des paires clé/valeur affichées sur la page produit.",
+      "specKey": "Nom (ex. Écran)",
+      "specValue": "Valeur (ex. OLED 6,1\")",
+      "related": "Produits recommandés",
+      "relatedHint": "Produits choisis manuellement, affichés sous celui-ci. Si vide, des produits similaires de la même catégorie sont proposés automatiquement.",
+      "searchProducts": "Rechercher des produits à recommander",
+      "save": "Enregistrer les détails boutique"
+    },
+    "import": {
+      "button": "Importer Excel",
+      "title": "Import en masse depuis Excel",
+      "subtitle": "Créez ou mettez à jour des produits depuis un fichier .xlsx, images et PDF inclus",
+      "template": "Télécharger le modèle",
+      "dropXlsx": "Choisir le fichier .xlsx",
+      "xlsxHint": "Colonnes : nom, catégorie, prix obligatoires · le SKU met à jour les produits existants",
+      "dropMedia": "Ajouter les fichiers référencés",
+      "mediaHint": "Optionnel : fichiers référencés par nom dans image_paths / technical_file_paths",
+      "filesSelected": "{count} fichier(s) sélectionné(s)",
+      "matched": "{matched}/{total} chemins trouvés",
+      "previewCount": "{count} lignes analysées",
+      "valid": "valides",
+      "invalid": "en erreur",
+      "run": "Importer {count} lignes",
+      "ready": "Prête",
+      "status": "Statut",
+      "media": "Médias",
+      "created": "Créés",
+      "updated": "Mis à jour",
+      "skipped": "Ignorés",
+      "mediaSummary": "{count} fichier(s) média attaché(s)",
+      "mediaFailures": "Médias non importés",
+      "fileNotProvided": "fichier non fourni",
+      "another": "Importer un autre fichier",
+      "done": "Import terminé : {created} créés, {updated} mis à jour",
+      "failed": "Échec de l'import",
+      "parseFailed": "Impossible de lire ce fichier. Utilisez le modèle fourni.",
+      "emptyFile": "Aucune ligne trouvée dans ce fichier",
+      "errors": {
+        "name": "nom requis",
+        "price": "prix invalide",
+        "category": "catégorie requise"
+      }
+    }
   },
   "categories": {
     "title": "Catégories",
@@ -509,7 +592,7 @@
     "last_90_days": "90 derniers jours",
     "last_year": "Dernière année",
     "custom_range": "Période personnalisée",
-      "custom": "Personnalisé",
+    "custom": "Personnalisé",
     "from_date": "Du",
     "to_date": "Au",
     "apply": "Appliquer",
@@ -802,6 +885,17 @@
       "GBP": "Livre sterling (GBP)",
       "MAD": "Dirham Marocain (MAD)",
       "TND": "Dinar Tunisien (TND)"
+    },
+    "storefront": {
+      "title": "Boutique en ligne",
+      "siteUrl": "URL publique du site",
+      "siteUrlHelp": "Utilisée pour les liens produits partagés et les aperçus sociaux (OpenGraph).",
+      "countryCode": "Indicatif par défaut",
+      "countryCodeHelp": "Ajouté aux numéros locaux pour les liens WhatsApp (ex. +213).",
+      "storePhone": "Téléphone du magasin",
+      "storePhoneHelp": "Affiché sur la boutique et utilisé pour le bouton WhatsApp.",
+      "storeAddress": "Adresse du magasin",
+      "storeAddressPlaceholder": "Rue, ville"
     }
   },
   "notifications": {
@@ -1153,5 +1247,206 @@
     "status": "Statut du Paiement",
     "record": "Enregistrer un Paiement",
     "history": "Historique des Paiements"
+  },
+  "orders": {
+    "title": "Commandes web",
+    "subtitle": "Commandes passées depuis la boutique en ligne",
+    "tabs": {
+      "all": "Toutes"
+    },
+    "status": {
+      "new": "Nouvelle",
+      "confirmed": "Confirmée",
+      "delivered": "Livrée",
+      "cancelled": "Annulée"
+    },
+    "table": {
+      "number": "Commande",
+      "customer": "Client",
+      "items": "Articles",
+      "total": "Total",
+      "status": "Statut",
+      "date": "Date",
+      "product": "Produit",
+      "qty": "Qté",
+      "price": "Prix",
+      "lineTotal": "Sous-total"
+    },
+    "detail": {
+      "title": "Commande"
+    },
+    "convertedBadge": "Vente",
+    "actions": {
+      "confirm": "Confirmer",
+      "cancel": "Annuler la commande",
+      "cancelRestock": "Annuler et restocker",
+      "deliver": "Marquer livrée",
+      "convert": "Convertir en vente",
+      "viewSale": "Voir la vente",
+      "confirmedDone": "Commande confirmée, stock mis à jour",
+      "cancelledDone": "Commande annulée",
+      "deliveredDone": "Commande marquée comme livrée",
+      "converted": "Commande convertie en vente"
+    },
+    "whatsapp": {
+      "open": "Ouvrir WhatsApp avec {phone}",
+      "invalid": "Numéro de téléphone invalide pour WhatsApp",
+      "message": "Bonjour {name}, concernant votre commande {number} passée sur notre boutique."
+    },
+    "errors": {
+      "insufficientStock": "Stock insuffisant",
+      "generic": "Une erreur est survenue. Réessayez."
+    },
+    "empty": {
+      "title": "Aucune commande web",
+      "description": "Les commandes passées sur la boutique apparaîtront ici."
+    }
+  },
+  "store": {
+    "nav": {
+      "main": "Navigation boutique",
+      "shop": "Boutique",
+      "cart": "Panier",
+      "menu": "Menu",
+      "language": "Langue",
+      "searchPlaceholder": "Rechercher des produits…"
+    },
+    "footer": {
+      "tagline": "Téléphones, accessoires et réparations expertes. Commandez en ligne, retirez en magasin.",
+      "links": "Liens rapides",
+      "contact": "Contact",
+      "repairs": "Service réparation",
+      "rights": "Tous droits réservés."
+    },
+    "breadcrumb": "Fil d'Ariane",
+    "shop": {
+      "title": "Boutique",
+      "subtitle": "Le stock réel de notre magasin, mis à jour en temps réel",
+      "metaDescription": "Téléphones, accessoires et plus. Stock réel du magasin, commandez en ligne avec votre nom et votre numéro de téléphone."
+    },
+    "category": {
+      "metaDescription": "Parcourez {name} : prix et stock réels de notre magasin."
+    },
+    "catalog": {
+      "filters": "Filtres",
+      "categories": "Catégories",
+      "allCategories": "Tous les produits",
+      "price": "Prix",
+      "min": "Min",
+      "max": "Max",
+      "minPrice": "Prix minimum",
+      "maxPrice": "Prix maximum",
+      "applyPrice": "Appliquer le filtre de prix",
+      "brand": "Marque",
+      "clearFilters": "Effacer les filtres",
+      "results": "{count} produits",
+      "resultsFor": "{count} produits pour « {query} »",
+      "sortBy": "Trier par",
+      "sort": {
+        "new": "Nouveautés",
+        "priceAsc": "Prix croissant",
+        "priceDesc": "Prix décroissant",
+        "name": "Nom"
+      },
+      "empty": {
+        "title": "Aucun produit trouvé",
+        "description": "Essayez d'autres filtres ou termes de recherche."
+      },
+      "pagination": "Pagination",
+      "prevPage": "Page précédente",
+      "nextPage": "Page suivante"
+    },
+    "product": {
+      "outOfStock": "Rupture de stock",
+      "inStock": "En stock",
+      "lowStock": "Plus que {count}",
+      "from": "dès",
+      "addToCart": "Ajouter au panier",
+      "buyNow": "Acheter maintenant",
+      "variant": "Choisissez une version",
+      "share": "Partager ce produit",
+      "linkCopied": "Lien copié dans le presse-papiers",
+      "shareFailed": "Impossible de copier le lien",
+      "noImage": "Photo bientôt disponible",
+      "viewImage": "Voir l'image",
+      "recommended": "Vous aimerez aussi",
+      "metaDescription": "{name} : prix, caractéristiques et disponibilité dans notre magasin.",
+      "tabs": {
+        "description": "Description",
+        "specs": "Caractéristiques",
+        "documents": "Documents"
+      }
+    },
+    "cart": {
+      "added": "{name} ajouté au panier",
+      "title": "Votre panier",
+      "emptyTitle": "Votre panier est vide",
+      "emptyDescription": "Les produits ajoutés apparaîtront ici, enregistrés sur cet appareil.",
+      "browse": "Voir la boutique",
+      "remove": "Retirer",
+      "summary": "Récapitulatif",
+      "itemCount": "{count} article(s)",
+      "total": "Total",
+      "paymentNote": "Paiement au retrait ou à la livraison. Aucun paiement en ligne.",
+      "checkout": "Passer la commande",
+      "continue": "Continuer les achats",
+      "quantity": "Quantité",
+      "decrease": "Diminuer la quantité",
+      "increase": "Augmenter la quantité"
+    },
+    "checkout": {
+      "title": "Commande",
+      "subtitle": "Laissez votre nom et votre numéro. Nous vous appelons pour confirmer.",
+      "name": "Nom complet",
+      "phone": "Numéro de téléphone",
+      "phoneHelp": "Nous utilisons ce numéro pour confirmer votre commande.",
+      "note": "Remarque",
+      "optional": "facultatif",
+      "notePlaceholder": "Préférence de couleur, heure de retrait, adresse de livraison…",
+      "placeOrder": "Confirmer ma commande",
+      "paymentNote": "Aucun paiement en ligne. Payez à la réception de votre commande.",
+      "yourOrder": "Votre commande",
+      "errors": {
+        "name": "Saisissez votre nom complet (au moins 2 caractères).",
+        "phone": "Saisissez un numéro valide (ex. 0555 12 34 56).",
+        "stock": "Certains articles viennent d'être épuisés. Vérifiez votre panier et réessayez.",
+        "generic": "La commande n'a pas pu être envoyée. Vérifiez votre connexion et réessayez."
+      }
+    },
+    "order": {
+      "title": "Commande",
+      "thanks": "Merci, {name} !",
+      "confirmation": "Votre commande a bien été reçue. Nous vous appellerons rapidement pour la confirmer. Conservez ce numéro :",
+      "product": "Produit",
+      "qty": "Qté",
+      "subtotal": "Sous-total"
+    },
+    "home": {
+      "heroTitle": "Téléphones, accessoires et réparations. Au même endroit.",
+      "heroSubtitle": "Prix et stock réels de notre magasin. Commandez en une minute avec votre nom et votre numéro.",
+      "heroCtaShop": "Voir la boutique",
+      "heroCtaRepairs": "Service réparation",
+      "stockChip": "En stock maintenant",
+      "bestSellers": "Meilleures ventes",
+      "newArrivals": "Nouveautés",
+      "categories": "Parcourir par catégorie",
+      "viewAll": "Tout voir",
+      "categoryCount": "{count} produits",
+      "repairs": {
+        "title": "On répare aussi vos téléphones.",
+        "subtitle": "Apportez votre appareil au magasin. Diagnostic d'abord, prix clair avant toute intervention.",
+        "screen": "Remplacement d'écran",
+        "screenDesc": "Vitre cassée ou écran mort, la plupart des modèles le jour même.",
+        "battery": "Changement de batterie",
+        "batteryDesc": "Batteries de qualité d'origine, correctement calibrées.",
+        "software": "Logiciel et déblocage",
+        "softwareDesc": "Réinstallation système, mises à jour et récupération de comptes.",
+        "diagnostics": "Diagnostic gratuit",
+        "diagnosticsDesc": "On examine l'appareil et on chiffre avant que vous décidiez.",
+        "cta": "Demander une réparation"
+      },
+      "ctaTitle": "À la recherche de votre prochain téléphone ?",
+      "ctaButton": "Voir ce qui est en stock"
+    }
   }
 }

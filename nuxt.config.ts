@@ -29,9 +29,8 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/branding/favicon-32.png' },
         { rel: 'apple-touch-icon', href: '/branding/apple-touch-icon.png' },
         { rel: 'manifest', href: '/manifest.json' },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap' },
+        // Fonts (Tajawal, Space Grotesk, DM Sans) are self-hosted by
+        // @nuxt/fonts; no external Google Fonts stylesheet needed
       ],
       // Inline script to set direction immediately based on cookie (prevents flicker)
       script: [
@@ -46,6 +45,9 @@ export default defineNuxtConfig({
   // NuxtHub uses local SQLite in development mode
   hub: {
     database: true,
+    // Product images & technical PDFs: Cloudflare R2 in production,
+    // .data/hub/blob on local disk in development
+    blob: true,
     // kv: true, // Disabled - not needed
   },
 

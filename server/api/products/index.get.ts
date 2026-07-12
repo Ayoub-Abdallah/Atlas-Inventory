@@ -9,6 +9,9 @@ export default defineEventHandler(async () => {
       category: true,
       supplier: true,
       tax: true,
+      media: {
+        orderBy: (media, { asc }) => [asc(media.sortOrder)],
+      },
       variants: {
         with: {
           supplier: true,

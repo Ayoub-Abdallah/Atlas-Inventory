@@ -41,6 +41,13 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
+  // Storefront APIs are public: catalog/detail reads and checkout order
+  // placement. Prices are computed server-side and admin-only fields are
+  // stripped by the shop DTO mappers.
+  if (path.startsWith('/api/shop/')) {
+    return;
+  }
+
   // These routes have their own secret-based protection
   if (publicRoutes.includes(path)) {
     return;

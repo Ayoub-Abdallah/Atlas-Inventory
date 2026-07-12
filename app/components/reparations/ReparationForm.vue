@@ -243,12 +243,12 @@ async function saveDraft() {
       // Update existing draft
       await $fetch(`/api/reparations/${props.reparation.id}`, { method: 'PATCH', body });
       showToast(t('reparations.messages.draft_saved'), 'success');
-      navigateTo(`/reparations/${props.reparation.id}`);
+      navigateTo(`/admin/reparations/${props.reparation.id}`);
     } else {
       // Create new draft
       const res = await $fetch<{ id: string }>('/api/reparations', { method: 'POST', body });
       showToast(t('reparations.messages.draft_saved'), 'success');
-      await navigateTo(`/reparations/${res.id}`);
+      await navigateTo(`/admin/reparations/${res.id}`);
     }
   } catch (e: any) {
     showToast(e?.data?.message || e?.message || 'Error saving draft', 'error');
@@ -285,7 +285,7 @@ async function saveEdit() {
     showToast(t('reparations.messages.updated'), 'success');
     
     // Navigate to detail page
-    navigateTo(`/reparations/${props.reparation.id}`);
+    navigateTo(`/admin/reparations/${props.reparation.id}`);
   } catch (e: any) {
     showToast(e?.data?.message || e?.message || t('errors.server_error'), 'error');
   } finally {
@@ -345,7 +345,7 @@ async function confirmReparation() {
     );
     
     showPaymentModal.value = false;
-    await navigateTo(`/reparations/${targetId}`);
+    await navigateTo(`/admin/reparations/${targetId}`);
   } catch (e: any) {
     console.error('Reparation creation error:', e);
     const msg = e?.data?.message || e?.message || 'Error creating reparation';
@@ -566,7 +566,7 @@ defineExpose({ submit, saveDraft });
 
     <!-- Action Buttons -->
     <div class="flex justify-end gap-3 pt-4 border-t">
-      <UiButton variant="outline" @click="navigateTo(isEdit ? `/reparations/${reparation.id}` : '/reparations')">{{ $t('app.cancel') }}</UiButton>
+      <UiButton variant="outline" @click="navigateTo(isEdit ? `/admin/reparations/${reparation.id}` : '/admin/reparations')">{{ $t('app.cancel') }}</UiButton>
       <!-- Save as Draft button (for new reparations and existing drafts) -->
       <UiButton 
         v-if="!isEdit || isDraft"

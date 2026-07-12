@@ -1,9 +1,20 @@
-// Admin-only routes
-const ADMIN_ROUTES = ['/users'];
+// Route access rules:
+// - Public surfaces (landing, storefront) need no session
+// - /admin/** requires authentication; /admin/users requires the admin role
+// - /auth/* handles login and first-time setup
+const ADMIN_ONLY_ROUTES = ['/admin/users'];
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Skip middleware for auth pages
-  if (to.path.startsWith('/auth/')) {
+  const isAdminArea = to.path === '/admin' || to.path.startsWith('/admin/');
+  const isAuthArea = to.path.startsWith('/auth/');
+
+  // Storefront and landing pages are public
+  if (!isAdminArea && !isAuthArea) {
+    return;
+  }
+
+  // Auth pages manage their own redirects after login/setup
+  if (isAuthArea) {
     return;
   }
 
@@ -39,8 +50,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // Check admin-only routes
-  const isAdminRoute = ADMIN_ROUTES.some((route) => to.path.startsWith(route));
+  const isAdminRoute = ADMIN_ONLY_ROUTES.some((route) =>
+    to.path.startsWith(route)
+  );
   if (isAdminRoute && (user.value as { role: string })?.role !== 'admin') {
-    return navigateTo('/');
+    return navigateTo('/admin');
   }
 });

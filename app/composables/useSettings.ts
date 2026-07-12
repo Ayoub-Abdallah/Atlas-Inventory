@@ -10,6 +10,10 @@ interface ApiSettings {
   language: string | null;
   theme: string | null;
   invoiceTemplate: string | null;
+  siteUrl: string | null;
+  phoneCountryCode: string | null;
+  storePhone: string | null;
+  storeAddress: string | null;
   updatedAt: string | null;
 }
 
@@ -21,6 +25,10 @@ export interface Settings {
   language: 'fr' | 'en' | 'ar';
   theme: 'default' | 'dark-grey' | 'professional-blue' | 'elegant-purple' | 'soft-green';
   invoiceTemplate: string | null;
+  siteUrl: string;
+  phoneCountryCode: string;
+  storePhone: string;
+  storeAddress: string;
   stockAlerts: {
     lowStock: boolean;
     outOfStock: boolean;
@@ -37,6 +45,10 @@ function transformFromApi(api: ApiSettings): Settings {
     language: (api.language as Settings['language']) ?? 'fr',
     theme: (api.theme as Settings['theme']) ?? 'default',
     invoiceTemplate: api.invoiceTemplate ?? null,
+    siteUrl: api.siteUrl ?? '',
+    phoneCountryCode: api.phoneCountryCode ?? '+213',
+    storePhone: api.storePhone ?? '',
+    storeAddress: api.storeAddress ?? '',
     stockAlerts: {
       lowStock: Boolean(api.lowStockAlert),
       outOfStock: Boolean(api.outOfStockAlert),
@@ -54,6 +66,10 @@ function transformToApi(settings: Settings): Partial<ApiSettings> {
     language: settings.language,
     theme: settings.theme,
     invoiceTemplate: settings.invoiceTemplate,
+    siteUrl: settings.siteUrl || null,
+    phoneCountryCode: settings.phoneCountryCode || '+213',
+    storePhone: settings.storePhone || null,
+    storeAddress: settings.storeAddress || null,
     lowStockAlert: settings.stockAlerts.lowStock,
     outOfStockAlert: settings.stockAlerts.outOfStock,
     emailDailyReport: settings.stockAlerts.emailDaily,

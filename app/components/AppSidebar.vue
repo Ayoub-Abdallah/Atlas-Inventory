@@ -4,23 +4,33 @@ const route = useRoute();
 const router = useRouter();
 const { user, isAdmin, canEdit, logout } = useAuth();
 
+// Storefront orders badge: show pending "new" orders at a glance
+const { data: ordersData } = useFetch('/api/orders', {
+  key: 'sidebar-orders-count',
+  query: { status: 'new' },
+  lazy: true,
+  server: false,
+});
+const newOrdersCount = computed(() => ordersData.value?.counts?.new || 0);
+
 const navigation = computed(() => {
-  const items: Array<{ name: string; href: string; icon: string }> = [
-    { name: t('nav.dashboard'), href: '/', icon: 'lucide:layout-dashboard' },
-    { name: t('nav.scan'), href: '/stock/scan', icon: 'lucide:scan-barcode' },
-    { name: t('nav.products'), href: '/products', icon: 'lucide:package' },
-    { name: t('nav.categories'), href: '/categories', icon: 'lucide:folder-tree' },
-    { name: t('nav.suppliers'), href: '/suppliers', icon: 'lucide:truck' },
-    { name: t('nav.movements'), href: '/movements', icon: 'lucide:arrow-left-right' },
-    { name: t('nav.sales'), href: '/sales', icon: 'lucide:receipt' },
-    { name: t('nav.credit'), href: '/credit', icon: 'lucide:credit-card' },
-    { name: t('nav.expenses'), href: '/expenses', icon: 'lucide:wallet' },
-    { name: t('nav.finance'), href: '/finance', icon: 'lucide:chart-line' },
+  const items: Array<{ name: string; href: string; icon: string; badge?: number }> = [
+    { name: t('nav.dashboard'), href: '/admin', icon: 'lucide:layout-dashboard' },
+    { name: t('nav.scan'), href: '/admin/stock/scan', icon: 'lucide:scan-barcode' },
+    { name: t('nav.products'), href: '/admin/products', icon: 'lucide:package' },
+    { name: t('nav.categories'), href: '/admin/categories', icon: 'lucide:folder-tree' },
+    { name: t('nav.suppliers'), href: '/admin/suppliers', icon: 'lucide:truck' },
+    { name: t('nav.movements'), href: '/admin/movements', icon: 'lucide:arrow-left-right' },
+    { name: t('nav.orders'), href: '/admin/orders', icon: 'lucide:shopping-bag', badge: newOrdersCount.value },
+    { name: t('nav.sales'), href: '/admin/sales', icon: 'lucide:receipt' },
+    { name: t('nav.credit'), href: '/admin/credit', icon: 'lucide:credit-card' },
+    { name: t('nav.expenses'), href: '/admin/expenses', icon: 'lucide:wallet' },
+    { name: t('nav.finance'), href: '/admin/finance', icon: 'lucide:chart-line' },
   ];
 
   // Show reparations link to users with edit permissions (admin/member)
   if (canEdit?.value) {
-    items.splice(6, 0, { name: t('nav.reparations'), href: '/reparations', icon: 'lucide:wrench' });
+    items.splice(7, 0, { name: t('nav.reparations'), href: '/admin/reparations', icon: 'lucide:wrench' });
   }
 
   return items;
@@ -28,22 +38,22 @@ const navigation = computed(() => {
 
 const secondaryNavigation = computed(() => {
   const items = [
-    { name: t('nav.taxes'), href: '/taxes', icon: 'lucide:percent' },
-    { name: t('nav.zakat'), href: '/zakat', icon: 'lucide:coins' },
-    { name: t('nav.settings'), href: '/settings', icon: 'lucide:settings' },
+    { name: t('nav.taxes'), href: '/admin/taxes', icon: 'lucide:percent' },
+    { name: t('nav.zakat'), href: '/admin/zakat', icon: 'lucide:coins' },
+    { name: t('nav.settings'), href: '/admin/settings', icon: 'lucide:settings' },
   ];
 
   // Add Users link for admins only
   if (isAdmin.value) {
-    items.unshift({ name: t('nav.users'), href: '/users', icon: 'lucide:users' });
+    items.unshift({ name: t('nav.users'), href: '/admin/users', icon: 'lucide:users' });
   }
 
   return items;
 });
 
 function isActive(href: string): boolean {
-  if (href === '/') {
-    return route.path === '/';
+  if (href === '/admin') {
+    return route.path === '/admin';
   }
   return route.path.startsWith(href);
 }
@@ -62,7 +72,7 @@ async function handleLogout() {
         class="flex h-10 w-28 shrink-0 items-center justify-center"
       >
         <!-- <Icon name="lucide:boxes" class="h-5 w-5" /> -->
-        <img src="/branding/logo.png" class="w-22" />
+        <img src="/branding/logo-small.webp" class="w-22" />
 
       </div>
       <!-- 
@@ -103,8 +113,14 @@ async function handleLogout() {
             "
           />
           <span>{{ item.name }}</span>
+          <span
+            v-if="item.badge"
+            class="ltr:ml-auto rtl:mr-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1.5 text-[10px] font-bold text-white"
+          >
+            {{ item.badge > 99 ? '99+' : item.badge }}
+          </span>
           <div
-            v-if="isActive(item.href)"
+            v-else-if="isActive(item.href)"
             class="ltr:ml-auto rtl:mr-auto h-1.5 w-1.5 rounded-full bg-primary-600"
           />
         </NuxtLink>

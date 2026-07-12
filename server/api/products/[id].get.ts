@@ -20,6 +20,9 @@ export default defineEventHandler(async (event) => {
       category: true,
       tax: true,
       supplier: true,
+      media: {
+        orderBy: (media, { asc }) => [asc(media.sortOrder), asc(media.createdAt)],
+      },
     },
   });
 

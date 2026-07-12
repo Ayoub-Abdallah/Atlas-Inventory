@@ -75,11 +75,41 @@ export default {
           'active-foreground': '#18181B', // gray-900
           border: '#E4E4E7', // gray-200
         },
+        // ------------------------------------------------------------------
+        // Storefront design tokens (landing + shop surfaces)
+        // Ink on cool white, one cobalt accent, rotating pastel tiles.
+        // ------------------------------------------------------------------
+        ink: '#0E1420',
+        cobalt: {
+          50: '#EDF2FF',
+          100: '#DBE4FF',
+          200: '#B6C9FF',
+          300: '#8AA6FF',
+          400: '#5C7FFF',
+          500: '#3457FA',
+          600: '#2340E0',
+          700: '#1B32B4',
+          800: '#182B8F',
+          900: '#172670',
+          950: '#101A4D',
+        },
+        tile: {
+          mist: '#EEF1F6',
+          blue: '#E7EEFB',
+          peach: '#FBEFE6',
+          mint: '#E9F4EC',
+          lilac: '#F2EDF9',
+          sand: '#F8F1E3',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif', "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"],
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
         arabic: ['IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Tahoma', 'Arial', 'sans-serif'],
+        // Storefront pairing: Space Grotesk display, DM Sans body,
+        // Tajawal carries both roles for Arabic (RTL)
+        display: ['Space Grotesk', 'Tajawal', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        store: ['DM Sans', 'Tajawal', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         xs: ['0.75rem', { lineHeight: '1rem' }],
@@ -97,6 +127,8 @@ export default {
         lg: '0.5rem', // 8px
         xl: '0.75rem', // 12px
         '2xl': '1rem', // 16px
+        '3xl': '1.25rem', // 20px, storefront tile radius
+        '4xl': '1.75rem', // 28px, storefront hero stage
       },
       boxShadow: {
         sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',

@@ -18,7 +18,15 @@ export default defineEventHandler(async (event) => {
 
   // Update the product (but don't update stockQuantity directly if it has variants)
   const hasVariants = body.variants && Array.isArray(body.variants) && body.variants.length > 0;
-  
+
+  // Storefront fields: keep the slug stable unless the product had none
+  const current = await db.query.products.findFirst({
+    where: eq(tables.products.id, id),
+    columns: { slug: true, published: true },
+  });
+  const slug = current?.slug || (await uniqueProductSlug(body.name, id));
+  const published = body.published ?? current?.published ?? false;
+
   await db
     .update(tables.products)
     .set({
@@ -26,6 +34,12 @@ export default defineEventHandler(async (event) => {
       sku: body.sku || null,
       barcode: body.barcode || null,
       description: body.description || null,
+      slug,
+      brand: body.brand || null,
+      specs: body.specs ?? null,
+      relatedProducts: body.relatedProducts ?? null,
+      published,
+      publishedAt: published && !current?.published ? new Date() : undefined,
       categoryId: body.categoryId || null,
       costPrice: body.costPrice ?? 0,
       sellingPrice: body.sellingPrice ?? 0,
